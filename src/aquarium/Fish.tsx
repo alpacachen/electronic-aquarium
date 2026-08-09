@@ -6,15 +6,16 @@ import type { AquariumBounds, FishState } from './fishSimulation'
 
 type FishProps = {
   accent: string
+  bounds: AquariumBounds
   body: string
   initialState: FishState
+  modelScale: number
   phase: number
 }
 
-const FISH_BOUNDS: AquariumBounds = { x: 4.15, y: 2, z: 1.78 }
 const MAX_FRAME_DELTA = 0.05
 
-export function Fish({ accent, body, initialState, phase }: FishProps) {
+export function Fish({ accent, body, bounds, initialState, modelScale, phase }: FishProps) {
   const fishRef = useRef<Group>(null)
   const tailRef = useRef<Mesh>(null)
   const stateRef = useRef(initialState)
@@ -23,7 +24,7 @@ export function Fish({ accent, body, initialState, phase }: FishProps) {
   useFrame((_, delta) => {
     const elapsed = Math.min(delta, MAX_FRAME_DELTA)
     elapsedRef.current += elapsed
-    stateRef.current = stepFish(stateRef.current, elapsed, FISH_BOUNDS)
+    stateRef.current = stepFish(stateRef.current, elapsed, bounds)
 
     const { position, heading } = stateRef.current
     if (fishRef.current) {
@@ -37,7 +38,11 @@ export function Fish({ accent, body, initialState, phase }: FishProps) {
   })
 
   return (
-    <group ref={fishRef} position={[initialState.position.x, initialState.position.y, initialState.position.z]}>
+    <group
+      ref={fishRef}
+      position={[initialState.position.x, initialState.position.y, initialState.position.z]}
+      scale={[modelScale, modelScale, modelScale]}
+    >
       <mesh castShadow scale={[0.66, 0.31, 0.27]}>
         <sphereGeometry args={[1, 20, 12]} />
         <meshStandardMaterial color={body} roughness={0.34} />

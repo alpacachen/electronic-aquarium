@@ -2,8 +2,7 @@ import { Edges, OrbitControls } from '@react-three/drei'
 import { BackSide, DoubleSide } from 'three'
 import { Fish } from './Fish'
 import type { FishState } from './fishSimulation'
-
-const TANK_SIZE = [10, 6, 5] as const
+import type { TankSceneGeometry } from './tankPresets'
 
 const FISH: Array<FishState & { id: string; body: string; accent: string; phase: number }> = [
   {
@@ -52,16 +51,29 @@ const FISH: Array<FishState & { id: string; body: string; accent: string; phase:
   },
 ]
 
-function Tank() {
+function scaleFishState(state: FishState, geometry: TankSceneGeometry): FishState {
+  return {
+    ...state,
+    position: {
+      x: state.position.x * geometry.fishPositionScale.x,
+      y: state.position.y * geometry.fishPositionScale.y,
+      z: state.position.z * geometry.fishPositionScale.z,
+    },
+    speed: state.speed * geometry.fishScale,
+    verticalVelocity: state.verticalVelocity * geometry.fishScale,
+  }
+}
+
+function Tank({ geometry }: { geometry: TankSceneGeometry }) {
   return (
     <group>
-      <mesh castShadow receiveShadow position={[0, -3.15, 0]}>
-        <boxGeometry args={[10.4, 0.35, 5.4]} />
+      <mesh castShadow receiveShadow position={[0, geometry.base.y, 0]}>
+        <boxGeometry args={[geometry.base.length, geometry.base.height, geometry.base.depth]} />
         <meshStandardMaterial color="#10191e" roughness={0.3} />
       </mesh>
 
       <mesh position={[0, 0, 0]}>
-        <boxGeometry args={TANK_SIZE} />
+        <boxGeometry args={[geometry.size.length, geometry.size.height, geometry.size.depth]} />
         <meshPhysicalMaterial
           color="#bceeff"
           depthWrite={false}
@@ -73,19 +85,21 @@ function Tank() {
         <Edges color="#7bc5da" opacity={0.7} transparent />
       </mesh>
 
-      <mesh position={[0, -2.82, 0]} receiveShadow>
-        <boxGeometry args={[9.8, 0.25, 4.8]} />
+      <mesh position={[0, geometry.substrate.y, 0]} receiveShadow>
+        <boxGeometry
+          args={[geometry.substrate.length, geometry.substrate.height, geometry.substrate.depth]}
+        />
         <meshStandardMaterial color="#bfa67b" roughness={0.95} />
       </mesh>
     </group>
   )
 }
 
-function Water() {
+function Water({ geometry }: { geometry: TankSceneGeometry }) {
   return (
     <group>
-      <mesh position={[0, -0.28, 0]}>
-        <boxGeometry args={[9.72, 5.35, 4.72]} />
+      <mesh position={[0, geometry.water.centerY, 0]}>
+        <boxGeometry args={[geometry.water.length, geometry.water.height, geometry.water.depth]} />
         <meshBasicMaterial
           color="#087f9e"
           depthWrite={false}
@@ -95,8 +109,8 @@ function Water() {
         />
       </mesh>
 
-      <mesh position={[0, 2.4, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[9.72, 4.72]} />
+      <mesh position={[0, geometry.water.surfaceY, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[geometry.water.length, geometry.water.depth]} />
         <meshPhysicalMaterial
           color="#57d4e8"
           depthWrite={false}
@@ -112,47 +126,61 @@ function Water() {
   )
 }
 
-export function Aquarium() {
+export function Aquarium({ geometry }: { geometry: TankSceneGeometry }) {
   return (
     <>
       <color attach="background" args={['#061823']} />
-      <fog attach="fog" args={['#061823', 20, 42]} />
+      <fog
+        attach="fog"
+        args={[
+          '#061823',
+          Math.max(20, geometry.camera.maxDistance * 0.8),
+          geometry.camera.maxDistance * 2.2,
+        ]}
+      />
       <ambientLight intensity={1.2} />
       <directionalLight
         castShadow
         color="#d8f7ff"
         intensity={3.4}
-        position={[6, 10, 8]}
+        position={[geometry.size.length * 0.6, geometry.size.height * 1.7, geometry.size.depth * 1.6]}
       />
-      <pointLight color="#26bde2" intensity={22} position={[-5, 1, 2]} />
+      <pointLight
+        color="#26bde2"
+        intensity={22}
+        position={[-geometry.size.length * 0.5, geometry.fishCenterY, geometry.size.depth * 0.4]}
+      />
 
       <OrbitControls
         dampingFactor={0.08}
         enableDamping
         enablePan={false}
-        maxDistance={22}
+        maxDistance={geometry.camera.maxDistance}
         maxPolarAngle={Math.PI / 2 - 0.05}
-        minDistance={5.5}
+        minDistance={geometry.camera.minDistance}
         minPolarAngle={0.18}
-        target={[0, -0.15, 0]}
+        target={[0, geometry.camera.targetY, 0]}
       />
 
-      <group position={[0, 0.25, 0]}>
-        <Tank />
-        <Water />
+      <Tank geometry={geometry} />
+      <Water geometry={geometry} />
+
+      <group position={[0, geometry.fishCenterY, 0]}>
         {FISH.map(({ id, body, accent, phase, ...initialState }) => (
           <Fish
             accent={accent}
             body={body}
-            initialState={initialState}
+            bounds={geometry.fishBounds}
+            initialState={scaleFishState(initialState, geometry)}
             key={id}
+            modelScale={geometry.fishScale}
             phase={phase}
           />
         ))}
       </group>
 
-      <mesh position={[0, -3.15, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[70, 70]} />
+      <mesh position={[0, geometry.floorY, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[Math.max(70, geometry.size.length * 4), Math.max(70, geometry.size.length * 4)]} />
         <meshStandardMaterial color="#071219" roughness={0.92} />
       </mesh>
     </>

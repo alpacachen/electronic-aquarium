@@ -71,6 +71,51 @@ body {
   letter-spacing: 0.08em;
 }
 
+.tank-selector {
+  position: absolute;
+  top: 42px;
+  right: 48px;
+  z-index: 1;
+  display: grid;
+  width: 290px;
+  gap: 0.45rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgb(129 216 231 / 24%);
+  border-radius: 14px;
+  background: rgb(4 25 35 / 72%);
+  backdrop-filter: blur(12px);
+}
+
+.tank-selector label {
+  color: #64d9e8;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.tank-selector select {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgb(165 226 235 / 34%);
+  border-radius: 8px;
+  color: #effcff;
+  background: #0b2b38;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tank-selector select:focus-visible {
+  outline: 2px solid #64d9e8;
+  outline-offset: 2px;
+}
+
+.tank-selector output {
+  color: #a5cdd7;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+
 .control-hint {
   position: absolute;
   right: 48px;
