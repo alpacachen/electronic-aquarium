@@ -126,9 +126,9 @@ export function Aquarium() {
         dampingFactor={0.08}
         enableDamping
         enablePan={false}
-        maxDistance={24}
+        maxDistance={22}
         maxPolarAngle={Math.PI / 2 - 0.05}
-        minDistance={7}
+        minDistance={5.5}
         minPolarAngle={0.18}
         target={[0, -0.15, 0]}
       />
