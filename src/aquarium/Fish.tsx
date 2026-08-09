@@ -11,7 +11,8 @@ type FishProps = {
   phase: number
 }
 
-const bounds: AquariumBounds = { x: 4.15, y: 2, z: 1.78 }
+const FISH_BOUNDS: AquariumBounds = { x: 4.15, y: 2, z: 1.78 }
+const MAX_FRAME_DELTA = 0.05
 
 export function Fish({ accent, body, initialState, phase }: FishProps) {
   const fishRef = useRef<Group>(null)
@@ -20,9 +21,9 @@ export function Fish({ accent, body, initialState, phase }: FishProps) {
   const elapsedRef = useRef(0)
 
   useFrame((_, delta) => {
-    const elapsed = Math.min(delta, 0.05)
+    const elapsed = Math.min(delta, MAX_FRAME_DELTA)
     elapsedRef.current += elapsed
-    stateRef.current = stepFish(stateRef.current, elapsed, bounds)
+    stateRef.current = stepFish(stateRef.current, elapsed, FISH_BOUNDS)
 
     const { position, heading } = stateRef.current
     if (fishRef.current) {

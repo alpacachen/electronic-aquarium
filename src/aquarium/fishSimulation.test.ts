@@ -16,6 +16,33 @@ describe('stepFish', () => {
     expect(stepFish(fish, 0.5, bounds).position).toEqual({ x: 1, y: 0, z: 0 })
   })
 
+  it('does not mutate the input state', () => {
+    const fish = {
+      position: { x: 1, y: -0.5, z: 0.25 },
+      heading: 0.6,
+      speed: 1,
+      turnRate: 0.2,
+      verticalVelocity: 0.1,
+    }
+
+    const original = structuredClone(fish)
+    stepFish(fish, 0.5, bounds)
+
+    expect(fish).toEqual(original)
+  })
+
+  it('treats a negative time step as no time passing', () => {
+    const fish = {
+      position: { x: 1, y: -0.5, z: 0.25 },
+      heading: 0.6,
+      speed: 1,
+      turnRate: 0.2,
+      verticalVelocity: 0.1,
+    }
+
+    expect(stepFish(fish, -1, bounds)).toEqual(fish)
+  })
+
   it('keeps a fish inside the tank and reflects its heading at a wall', () => {
     const fish = {
       position: { x: 4, y: 0, z: 0 },

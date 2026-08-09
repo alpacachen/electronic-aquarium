@@ -1,21 +1,21 @@
 export type Point3 = {
-  x: number
-  y: number
-  z: number
+  readonly x: number
+  readonly y: number
+  readonly z: number
 }
 
 export type FishState = {
-  position: Point3
-  heading: number
-  speed: number
-  turnRate: number
-  verticalVelocity: number
+  readonly position: Point3
+  readonly heading: number
+  readonly speed: number
+  readonly turnRate: number
+  readonly verticalVelocity: number
 }
 
 export type AquariumBounds = {
-  x: number
-  y: number
-  z: number
+  readonly x: number
+  readonly y: number
+  readonly z: number
 }
 
 const clamp = (value: number, limit: number) =>
