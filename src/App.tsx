@@ -8,7 +8,7 @@ export function App() {
         camera={{ position: [12, 7, 12], fov: 42 }}
         dpr={[1, 2]}
         gl={{ antialias: true }}
-        shadows
+        shadows="basic"
       >
         <Aquarium />
       </Canvas>
