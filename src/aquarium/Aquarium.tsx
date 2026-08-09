@@ -5,11 +5,12 @@ import type { FishState } from './fishSimulation'
 
 const TANK_SIZE = [10, 6, 5] as const
 
-const fish: Array<FishState & { body: string; accent: string; phase: number }> = [
+const FISH: Array<FishState & { id: string; body: string; accent: string; phase: number }> = [
   {
     accent: '#ffd166',
     body: '#f28f3b',
     heading: 0.2,
+    id: 'amber',
     phase: 0,
     position: { x: -2.8, y: 0.4, z: -0.55 },
     speed: 0.72,
@@ -20,6 +21,7 @@ const fish: Array<FishState & { body: string; accent: string; phase: number }> =
     accent: '#ff9f9f',
     body: '#e85d75',
     heading: 2.4,
+    id: 'coral',
     phase: 1.8,
     position: { x: 2.1, y: -0.15, z: 0.55 },
     speed: 0.58,
@@ -30,6 +32,7 @@ const fish: Array<FishState & { body: string; accent: string; phase: number }> =
     accent: '#8be9fd',
     body: '#3185a8',
     heading: -1.2,
+    id: 'blue',
     phase: 3.2,
     position: { x: -0.8, y: -0.9, z: 0.7 },
     speed: 0.66,
@@ -40,6 +43,7 @@ const fish: Array<FishState & { body: string; accent: string; phase: number }> =
     accent: '#f6bd60',
     body: '#6e9f68',
     heading: 1.7,
+    id: 'sage',
     phase: 4.9,
     position: { x: 1.2, y: 1.05, z: -0.9 },
     speed: 0.5,
@@ -92,7 +96,7 @@ function Water() {
       </mesh>
 
       <mesh position={[0, 2.4, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[9.72, 4.72, 32, 16]} />
+        <planeGeometry args={[9.72, 4.72]} />
         <meshPhysicalMaterial
           color="#57d4e8"
           depthWrite={false}
@@ -136,12 +140,12 @@ export function Aquarium() {
       <group position={[0, 0.25, 0]}>
         <Tank />
         <Water />
-        {fish.map(({ body, accent, phase, ...initialState }, index) => (
+        {FISH.map(({ id, body, accent, phase, ...initialState }) => (
           <Fish
             accent={accent}
             body={body}
             initialState={initialState}
-            key={index}
+            key={id}
             phase={phase}
           />
         ))}

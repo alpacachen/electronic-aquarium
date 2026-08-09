@@ -6,7 +6,12 @@ export function App() {
     <main className="app-shell">
       <Canvas
         camera={{ position: [12, 7, 12], fov: 42 }}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
+        fallback={
+          <div className="webgl-fallback">
+            当前浏览器无法启用 WebGL，暂时无法显示电子鱼缸。
+          </div>
+        }
         gl={{ antialias: true }}
         shadows="basic"
       >

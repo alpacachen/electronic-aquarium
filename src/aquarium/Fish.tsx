@@ -1,7 +1,8 @@
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 import type { Group, Mesh } from 'three'
-import { AquariumBounds, FishState, stepFish } from './fishSimulation'
+import { stepFish } from './fishSimulation'
+import type { AquariumBounds, FishState } from './fishSimulation'
 
 type FishProps = {
   accent: string
