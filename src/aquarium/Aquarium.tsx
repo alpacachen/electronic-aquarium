@@ -1,4 +1,4 @@
-import { Edges } from '@react-three/drei'
+import { Edges, OrbitControls } from '@react-three/drei'
 import { BackSide, DoubleSide } from 'three'
 import { Fish } from './Fish'
 import type { FishState } from './fishSimulation'
@@ -121,6 +121,17 @@ export function Aquarium() {
         position={[6, 10, 8]}
       />
       <pointLight color="#26bde2" intensity={22} position={[-5, 1, 2]} />
+
+      <OrbitControls
+        dampingFactor={0.08}
+        enableDamping
+        enablePan={false}
+        maxDistance={24}
+        maxPolarAngle={Math.PI / 2 - 0.05}
+        minDistance={7}
+        minPolarAngle={0.18}
+        target={[0, -0.15, 0]}
+      />
 
       <group position={[0, 0.25, 0]}>
         <Tank />
