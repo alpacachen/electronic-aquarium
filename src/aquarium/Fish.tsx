@@ -202,6 +202,9 @@ export function Fish({ bounds, modelScale, seed, species, speciesId }: FishProps
           animationTimeRef.current * species.tail.frequency,
         )
       }
+      fishRef.current.userData.aquariumAnimationTime = swimAnimation
+        ? actions[swimAnimation.name]?.time ?? 0
+        : animationTimeRef.current
     }
   })
 

@@ -53,15 +53,17 @@ describe('观赏鱼缸', () => {
   it('让每个自带游泳动画的鱼种都真的动起来', () => {
     // Given 入场过渡结束后，记下每个鱼种的姿态
     aquarium.letTimePass(1)
-    const before = new Map(aquarium.fish().map(({ species, poseKey }) => [species, poseKey]))
+    const before = new Map(
+      aquarium.fish().map(({ animationTime, species }) => [species, animationTime]),
+    )
 
     // When 过去一小会儿
     aquarium.letTimePass(0.3)
 
-    // Then 除了靠程序化摆尾的 barramundi，其余鱼种的骨骼都换了姿态
-    aquarium.fish().forEach(({ poseKey, species }) => {
+    // Then 除了靠程序化摆尾的 barramundi，其余鱼种的动画都在播放
+    aquarium.fish().forEach(({ animationTime, species }) => {
       if (species === 'barramundi') return
-      expect(poseKey, species).not.toBe(before.get(species))
+      expect(animationTime, species).not.toBe(before.get(species))
     })
   })
 

@@ -7,6 +7,7 @@ import { Fish, FishErrorBoundary } from './Fish'
 import { FISH_SPECIES } from './fishSpecies'
 import type { FishSpeciesId } from './fishSpecies'
 import type { FishSeed } from './fishSimulation'
+import { clearAquariumProbe, setAquariumProbe } from './aquariumProbe'
 import { liftLoadingCurtain } from './loadingCurtain'
 import type { StockedFish } from './stocking'
 import type { TankSceneGeometry } from './tankPresets'
@@ -139,6 +140,17 @@ function LoadingCurtainBridge() {
   return null
 }
 
+function AquariumProbe({ geometry }: { geometry: TankSceneGeometry }) {
+  const state = useThree()
+
+  useEffect(() => {
+    setAquariumProbe(state, geometry.size)
+    return clearAquariumProbe
+  }, [geometry.size, state])
+
+  return null
+}
+
 export function Aquarium({
   fish,
   geometry,
@@ -151,6 +163,7 @@ export function Aquarium({
   return (
     <>
       <LoadingCurtainBridge />
+      <AquariumProbe geometry={geometry} />
       <color attach="background" args={[PALETTE.ABYSS]} />
       <fog
         attach="fog"
