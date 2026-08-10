@@ -144,7 +144,7 @@ export function App({ frameloop = 'always' }: AppProps = {}) {
         </div>
       )}
 
-      <header className="pointer-events-none absolute top-10 left-12 z-10 [text-shadow:0_2px_24px_--alpha(#000a12/70%)] max-[720px]:top-6 max-[720px]:left-6">
+      <header className="pointer-events-none absolute top-10 left-12 z-10 [text-shadow:0_2px_24px_--alpha(var(--color-abyss)/70%)] max-[720px]:top-6 max-[720px]:left-6">
         <span className="text-[0.7rem] font-bold tracking-[0.24em] text-lagoon">
           PHASE 01
         </span>
