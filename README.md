@@ -2,6 +2,8 @@
 
 一个只需要打开浏览器就能观赏的 PC 端 3D 虚拟鱼缸。
 
+线上：<https://alpacachen.github.io/electronic-aquarium/>（main 上每次提交自动部署）
+
 ## 当前阶段
 
 - Three.js 场景：玻璃鱼缸、水体和水面。
@@ -30,6 +32,10 @@ pnpm check
 ```
 
 `pnpm check` 会依次运行行为测试、TypeScript 检查和生产构建。
+
+想看构建产物在线上那个子路径下的样子，用 `pnpm exec vite preview`：它和构建一样把
+站点挂在 `/electronic-aquarium/` 下，所以模型少了会在本地就露出来。开发服务器和交互
+测试仍然从根路径提供。
 
 ## 测试
 

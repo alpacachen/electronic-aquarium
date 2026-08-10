@@ -1,3 +1,11 @@
+/**
+ * Models are fetched at runtime by URL rather than imported, so the bundler
+ * never sees them and cannot rewrite their paths. Prefixing Vite's `BASE_URL`
+ * keeps them resolvable wherever the app is served from: the root in
+ * development, a repository subpath on GitHub Pages.
+ */
+const modelUrl = (path: string) => `${import.meta.env.BASE_URL}models/${path}`
+
 export type FishSpecies = Readonly<{
   animation?: Readonly<{ name: string; speed: number }>
   centerY: number
@@ -36,7 +44,7 @@ export const FISH_SPECIES = {
   barramundi: {
     centerY: 0.143,
     label: '尖吻鲈',
-    modelUrl: '/models/barramundi/barramundi.glb',
+    modelUrl: modelUrl('barramundi/barramundi.glb'),
     rotationY: Math.PI / 2,
     tail: {
       amplitude: 0.035,
@@ -53,7 +61,7 @@ export const FISH_SPECIES = {
     animation: { name: 'Armature|Swim.001', speed: 1.5 },
     centerY: 0.1407,
     label: '蓝刀鲷',
-    modelUrl: '/models/blue-tang/blue-tang.glb',
+    modelUrl: modelUrl('blue-tang/blue-tang.glb'),
     rotationY: Math.PI / 2,
     /** Busy and inquisitive, ranging through the middle of the tank. */
     temperament: { depth: 0.1, period: 56, speed: 0.64, surge: 0.3 },
@@ -63,7 +71,7 @@ export const FISH_SPECIES = {
     animation: { name: 'Armature|Swim', speed: 1.8 },
     centerY: 0.3261,
     label: '小丑鱼',
-    modelUrl: '/models/clownfish/clownfish.glb',
+    modelUrl: modelUrl('clownfish/clownfish.glb'),
     rotationY: Math.PI / 2,
     /** Small and fidgety: the largest change of pace, and it roams the most. */
     temperament: { depth: -0.1, period: 66, speed: 0.58, surge: 0.34 },
@@ -73,7 +81,7 @@ export const FISH_SPECIES = {
     animation: { name: 'Swim_Slow', speed: 1 },
     centerY: 0.0613,
     label: '金鱼',
-    modelUrl: '/models/goldfish/goldfish_variety_3.glb',
+    modelUrl: modelUrl('goldfish/goldfish_variety_3.glb'),
     rotationY: 0,
     /** Unhurried, drifting around the middle. */
     temperament: { depth: 0.05, period: 52, speed: 0.6, surge: 0.2 },
@@ -83,7 +91,7 @@ export const FISH_SPECIES = {
     animation: { name: 'Armature|Swim', speed: 1.2 },
     centerY: 0.2061,
     label: '金枪鱼',
-    modelUrl: '/models/tuna/tuna.glb',
+    modelUrl: modelUrl('tuna/tuna.glb'),
     rotationY: Math.PI / 2,
     /** Built to cruise: the fastest, and quick to change level because of it. */
     temperament: { depth: 0.3, period: 38, speed: 0.85, surge: 0.12 },
