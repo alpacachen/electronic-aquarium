@@ -45,6 +45,7 @@ pnpm check
 出来的鱼缸和鱼。
 
 - `src/testing/aquariumPage.tsx`：唯一的测试入口，把应用包装成"观众看到的鱼缸"。
+- `src/testing/quietDependencyWarnings.ts`：滤掉依赖自己打的、我们改不动的过时警告。
 - `src/aquarium/viewingTheAquarium.test.tsx`：打开页面看鱼游动。
 - `src/aquarium/stockingTheTank.test.tsx`：在鱼市里增减鱼。
 - `src/aquarium/choosingATankSize.test.tsx`：切换鱼缸尺寸。
@@ -58,6 +59,10 @@ pnpm check
 
 同理，交互测试文件是串行跑的（`fileParallelism: false`）：每个文件都要驱动自己的
 WebGL 画布，几个文件一起抢同一个软件光栅化器时，单独都能过的用例反而会集体超时。
+
+测试日志只留我们能动手改的东西。依赖自己打的过时警告（比如 fiber 9 每建一个画布就
+建一个已废弃的 `THREE.Clock`）由 `src/testing/quietDependencyWarnings.ts` 按整条
+消息滤掉，别的警告照旧打出来。要静音新的一条，往那份清单里加，并写清为什么我们改不动。
 
 ## 目录约定
 
