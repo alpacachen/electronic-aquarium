@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { openAquarium } from '../testing/aquariumPage'
-import type { AquariumPage } from '../testing/aquariumPage'
+import { openAquarium } from './aquariumPage'
+import type { AquariumPage } from './aquariumPage'
 
 describe('观赏鱼缸', () => {
   let aquarium: AquariumPage
@@ -221,6 +221,102 @@ describe('观赏鱼缸', () => {
         ),
       )
     expect(Math.max(...turns)).toBeGreaterThan(0.2)
+  })
+
+  /**
+   * 一帧的长度。`letTimePass` 按固定步长推进，给它一帧的时间就正好走一帧，
+   * 逐帧取样便能断言那些「不许突变」的性质。
+   */
+  const ONE_FRAME = 1 / 20
+
+  it('不让鱼的朝向逐帧跳变，转身总是转过去的', () => {
+    // Given 让鱼群游开，其中总有鱼正贴着玻璃转身
+    aquarium.letTimePass(2)
+
+    /**
+     * When 一帧一帧地看十秒
+     *
+     * 每帧只读一次场景。`fish()` 要遍历整个场景图，一帧读两次会让这条用例慢到
+     * 拖垮清理钩子的超时。
+     */
+    let previous = aquarium.fish().map(({ headingY }) => headingY)
+    for (let frame = 0; frame < 200; frame += 1) {
+      aquarium.letTimePass(ONE_FRAME)
+      const now = aquarium.fish()
+
+      // Then 没有哪条鱼在一帧之内甩过一个大角度
+      now.forEach(({ headingY, species }, index) => {
+        const turned = Math.abs(
+          Math.atan2(
+            Math.sin(headingY - previous[index]!),
+            Math.cos(headingY - previous[index]!),
+          ),
+        )
+        /**
+         * 贴着玻璃转身是这里最急的一下，实测约 0.13 弧度——那是模拟里 per-frame
+         * 的转向限幅在起作用。阈值留到 0.2：够松，不会因为正常转身而误报；也够紧，
+         * 一旦限幅失效（甩过半个身位以上）就会立刻挂。
+         */
+        expect(turned, `${species} 一帧转了 ${turned.toFixed(3)} 弧度`).toBeLessThan(0.2)
+      })
+      previous = now.map(({ headingY }) => headingY)
+    }
+  })
+
+  it('不让鱼的抬头低头逐帧跳变', () => {
+    // Given 让鱼群越过入场姿态
+    aquarium.letTimePass(3)
+
+    // When 一帧一帧地看十秒，每帧只读一次场景
+    let previous = aquarium.fish().map(({ pitch }) => pitch)
+    for (let frame = 0; frame < 200; frame += 1) {
+      aquarium.letTimePass(ONE_FRAME)
+      const now = aquarium.fish()
+
+      // Then 俯仰角是渐变的，不会一帧翻过去
+      now.forEach(({ pitch, species }, index) => {
+        /**
+         * 实测一帧最多仰 0.006 弧度，因为升降本身是渐进逼近出来的。阈值定在 0.05：
+         * 仍有近十倍余量不会误报，但真要是哪天姿态改成一步到位，一帧就会跨过它。
+         */
+        const swung = Math.abs(pitch - previous[index]!)
+        expect(swung, `${species} 一帧仰了 ${swung.toFixed(3)} 弧度`).toBeLessThan(0.05)
+      })
+      previous = now.map(({ pitch }) => pitch)
+    }
+  })
+
+  it('让鱼有快有慢，而不是一成不变地匀速前进', () => {
+    // Given 让鱼群游开
+    aquarium.letTimePass(2)
+
+    /**
+     * When 逐帧量每条鱼走过的距离
+     *
+     * 位移的模长就是速度乘步长，和朝向无关，所以不必知道鱼往哪游也能看出它的快慢。
+     */
+    const travelled = new Map<number, number[]>()
+    let previous = aquarium.fish().map(({ position }) => position)
+    for (let frame = 0; frame < 200; frame += 1) {
+      aquarium.letTimePass(ONE_FRAME)
+      const now = aquarium.fish()
+      now.forEach(({ position }, index) => {
+        const step = Math.hypot(
+          position.x - previous[index]!.x,
+          position.y - previous[index]!.y,
+          position.z - previous[index]!.z,
+        )
+        travelled.set(index, [...(travelled.get(index) ?? []), step])
+      })
+      previous = now.map(({ position }) => position)
+    }
+
+    // Then 至少有一条鱼明显地时快时慢，且没有鱼倒着游
+    const spans = [...travelled.values()].map((steps) => Math.max(...steps) / Math.min(...steps))
+    expect(Math.max(...spans)).toBeGreaterThan(1.3)
+    ;[...travelled.values()].forEach((steps) => {
+      expect(Math.min(...steps)).toBeGreaterThan(0)
+    })
   })
 
   it('让鱼群游遍整个缸，而不是挤在一角', () => {

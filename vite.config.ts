@@ -16,7 +16,12 @@ export default defineConfig(({ command, isPreview }) => ({
   base: command === 'build' || isPreview ? PAGES_BASE : '/',
   plugins: [react()],
   test: {
-    include: ['src/**/*.test.tsx'],
+    /**
+     * Every test lives in src/tests/ and drives the whole app through a real
+     * browser. There is no second suite: see AGENTS.md for why the project does
+     * not keep function-level unit tests.
+     */
+    include: ['src/tests/**/*.test.tsx'],
     /**
      * One test file at a time. Every file drives its own WebGL canvas through the
      * same software rasteriser, and running them at once makes each one slower

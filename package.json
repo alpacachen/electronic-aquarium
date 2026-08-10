@@ -11,9 +11,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "check": "pnpm test && pnpm build",
-    "test": "pnpm test:unit && pnpm test:browser",
-    "test:browser": "vitest run --config vite.config.ts",
-    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "test": "vitest run --config vite.config.ts",
     "test:watch": "vitest --config vite.config.ts"
   },
   "dependencies": {

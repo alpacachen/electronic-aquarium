@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { openAquarium } from '../testing/aquariumPage'
-import type { AquariumPage } from '../testing/aquariumPage'
+import { openAquarium } from './aquariumPage'
+import type { AquariumPage } from './aquariumPage'
 
 describe('逛鱼市', () => {
   let aquarium: AquariumPage
@@ -163,6 +163,71 @@ describe('逛鱼市', () => {
       }
       expect(poseKey, `${species} 的骨骼僵住了`).not.toBe(was.poseKey)
     })
+  })
+
+  /**
+   * 同一个鱼种的几条鱼要各有各的性子。这条原来是拿 stockFish 直接比字段的，
+   * 改成从缸里看：养一群同种鱼，它们不该像一支队伍那样一起上浮一起下潜。
+   */
+  it('同一个鱼种的几条鱼，不会齐步升降', async () => {
+    // Given 观众把缸里换成清一色的小丑鱼
+    for (const label of ['尖吻鲈', '蓝刀鲷', '金鱼', '金鱼', '金枪鱼']) {
+      await aquarium.market().sell(label)
+    }
+    for (let more = 0; more < 5; more += 1) {
+      await aquarium.market().buy('小丑鱼')
+    }
+    aquarium.letTimePass(2)
+
+    /**
+     * When 记下这一群鱼半分钟里的升降
+     *
+     * 看的是「有没有齐步走」：同种鱼若共用一套巡游参数，就会一起上浮、一起下潜，
+     * 哪怕出发点不同也是同一个节奏。所以逐秒比较它们的升降方向，而不是比某一刻
+     * 的深度差——后者光靠出发点不同就能凑出来，抹掉个体差异也照样通过。
+     */
+    const school = aquarium.fish()
+    expect(school).toHaveLength(6)
+
+    const trail: number[][] = [school.map(({ position }) => position.y)]
+    for (let second = 0; second < 30; second += 1) {
+      aquarium.letTimePass(1)
+      trail.push(aquarium.fish().map(({ position }) => position.y))
+    }
+
+    // Then 总有那么些时刻，有鱼在上浮、同时有鱼在下潜
+    const mixed = trail.slice(1).filter((heights, index) => {
+      const deltas = heights.map((y, fish) => y - trail[index]![fish]!)
+      return deltas.some((delta) => delta > 0.01) && deltas.some((delta) => delta < -0.01)
+    })
+    expect(mixed.length).toBeGreaterThan(trail.length / 4)
+  })
+
+  /** 鱼种的快慢基调要能在缸里看出来：金枪鱼是最快的，尖吻鲈是最慢的。 */
+  it('金枪鱼比尖吻鲈游得快', async () => {
+    // Given 缸里各有一条金枪鱼和尖吻鲈
+    aquarium.letTimePass(2)
+
+    // When 看它们各自游过多少路
+    const swum = new Map<string, number>()
+    let previous = new Map(
+      aquarium.fish().map(({ position, species }) => [species, position]),
+    )
+    for (let second = 0; second < 30; second += 1) {
+      aquarium.letTimePass(1)
+      aquarium.fish().forEach(({ position, species }) => {
+        const was = previous.get(species)
+        if (!was) return
+        swum.set(
+          species,
+          (swum.get(species) ?? 0) + Math.hypot(position.x - was.x, position.z - was.z),
+        )
+      })
+      previous = new Map(aquarium.fish().map(({ position, species }) => [species, position]))
+    }
+
+    // Then 金枪鱼走得更远
+    expect(swum.get('tuna')!).toBeGreaterThan(swum.get('barramundi')!)
   })
 
   it('捞光一个鱼种之后就不让再捞', async () => {
