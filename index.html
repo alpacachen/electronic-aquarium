@@ -57,13 +57,22 @@
         background: rgb(129 216 231 / 18%);
       }
 
-      /* No total to count towards, so the bar sweeps instead of filling. */
+      /*
+        Sweeps until the first content-length lands, then fills to the real
+        figure — a bar that sat at 0% while the models were on their way would
+        read as stuck.
+      */
       .loading-curtain__fill {
         width: 40%;
         height: 100%;
         border-radius: 999px;
         background: linear-gradient(90deg, #26bde2, #7ff0ff);
         animation: loading-sweep 1.25s ease-in-out infinite;
+      }
+
+      #loading-curtain[data-measured] .loading-curtain__fill {
+        animation: none;
+        transition: width 240ms ease;
       }
 
       @keyframes loading-sweep {
@@ -80,7 +89,7 @@
 
       @media (prefers-reduced-motion: reduce) {
         #loading-curtain { transition: none; }
-        .loading-curtain__fill { animation: none; }
+        .loading-curtain__fill { animation: none; transition: none; }
       }
     </style>
   </head>
@@ -100,10 +109,16 @@
       <div class="loading-curtain__body">
         <span class="loading-curtain__phase">PHASE 01</span>
         <p class="loading-curtain__title">正在注水</p>
-        <div class="loading-curtain__track">
+        <div
+          class="loading-curtain__track"
+          role="progressbar"
+          aria-label="鱼缸加载进度"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
           <div class="loading-curtain__fill"></div>
         </div>
-        <p class="loading-curtain__hint">正在把鱼放进缸里</p>
+        <p class="loading-curtain__hint" aria-live="polite">正在把鱼放进缸里</p>
       </div>
     </div>
 
