@@ -61,15 +61,34 @@ describe('挑选鱼缸尺寸', () => {
     await expect.element(aquarium.capacity()).toHaveTextContent('约 12 L')
   })
 
-  it('换缸之后鱼群还在，而且个头随缸变化', async () => {
-    // Given 标准缸里鱼的大小
+  /**
+   * 换到装得下的缸，鱼群应当原封不动地跟过去。换到更小的缸会因为容量而捞走几条，
+   * 那是鱼市那边的规则，由 stockingTheTank 覆盖。
+   */
+  it('换到更大的缸，鱼群还在，个头也跟着变大', async () => {
+    // Given 标准缸里的鱼群和它们的大小
+    const inStandard = aquarium.fish()
+
+    // When 观众换成大型缸
+    await aquarium.chooseTankSize('大型缸')
+
+    // Then 鱼一条都没少，鱼种也还是那些，只是变大了以配得上新缸
+    const inLarge = aquarium.fish()
+    expect(inLarge).toHaveLength(inStandard.length)
+    expect(new Set(inLarge.map(({ species }) => species))).toEqual(
+      new Set(inStandard.map(({ species }) => species)),
+    )
+    expect(inLarge[0]!.scale).toBeGreaterThan(inStandard[0]!.scale)
+  })
+
+  it('换成小缸时，鱼跟着缩小', async () => {
+    // Given 标准缸里第一条鱼的大小
     const inStandard = aquarium.fish()[0]!.scale
 
     // When 观众换成迷你缸
     await aquarium.chooseTankSize('迷你缸')
 
-    // Then 四条鱼一条都没少，只是变小了以配得上新缸
-    expect(aquarium.fish()).toHaveLength(4)
+    // Then 留下来的鱼变小了，以配得上这只更小的缸
     expect(aquarium.fish()[0]!.scale).toBeLessThan(inStandard)
   })
 

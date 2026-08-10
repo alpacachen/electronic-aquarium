@@ -6,6 +6,12 @@ export default defineConfig({
   plugins: [react()],
   test: {
     include: ['src/**/*.test.tsx'],
+    /**
+     * One test file at a time. Every file drives its own WebGL canvas through the
+     * same software rasteriser, and running them at once makes each one slower
+     * than its timeout — they pass individually and time out together.
+     */
+    fileParallelism: false,
     browser: {
       enabled: true,
       headless: true,

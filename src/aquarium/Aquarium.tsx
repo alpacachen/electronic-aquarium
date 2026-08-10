@@ -3,54 +3,25 @@ import { useThree } from '@react-three/fiber'
 import { useLayoutEffect } from 'react'
 import { BackSide, DoubleSide } from 'three'
 import { Fish } from './Fish'
-import type { FishState } from './fishSimulation'
+import { FISH_SPECIES } from './fishSpecies'
+import type { FishSeed } from './fishSimulation'
+import type { StockedFish } from './stocking'
 import type { TankSceneGeometry } from './tankPresets'
 
-const FISH: Array<FishState & { id: string }> = [
-  {
-    heading: 0.2,
-    id: 'amber',
-    position: { x: -2.8, y: 0.4, z: -0.55 },
-    speed: 0.72,
-    turnRate: 0.16,
-    verticalVelocity: 0.03,
-  },
-  {
-    heading: 2.4,
-    id: 'coral',
-    position: { x: 2.1, y: -0.15, z: 0.55 },
-    speed: 0.58,
-    turnRate: -0.19,
-    verticalVelocity: -0.04,
-  },
-  {
-    heading: -1.2,
-    id: 'blue',
-    position: { x: -0.8, y: -0.9, z: 0.7 },
-    speed: 0.66,
-    turnRate: 0.22,
-    verticalVelocity: 0.05,
-  },
-  {
-    heading: 1.7,
-    id: 'sage',
-    position: { x: 1.2, y: 1.05, z: -0.9 },
-    speed: 0.5,
-    turnRate: -0.14,
-    verticalVelocity: -0.03,
-  },
-]
-
-function scaleFishState(state: FishState, geometry: TankSceneGeometry): FishState {
+/**
+ * Scales a fish written in standard-tank units to whichever tank is on screen.
+ * Its cruise is left alone: depth and range are fractions of the tank, and the
+ * periods are seconds, so both already carry over to any size.
+ */
+function scaleFishSeed(seed: FishSeed, geometry: TankSceneGeometry): FishSeed {
   return {
-    ...state,
+    ...seed,
     position: {
-      x: state.position.x * geometry.fishPositionScale.x,
-      y: state.position.y * geometry.fishPositionScale.y,
-      z: state.position.z * geometry.fishPositionScale.z,
+      x: seed.position.x * geometry.fishPositionScale.x,
+      y: seed.position.y * geometry.fishPositionScale.y,
+      z: seed.position.z * geometry.fishPositionScale.z,
     },
-    speed: state.speed * geometry.fishScale,
-    verticalVelocity: state.verticalVelocity * geometry.fishScale,
+    speed: seed.speed * geometry.fishScale,
   }
 }
 
@@ -131,7 +102,13 @@ function CameraRig({ geometry }: { geometry: TankSceneGeometry }) {
   return null
 }
 
-export function Aquarium({ geometry }: { geometry: TankSceneGeometry }) {
+export function Aquarium({
+  fish,
+  geometry,
+}: {
+  fish: readonly StockedFish[]
+  geometry: TankSceneGeometry
+}) {
   return (
     <>
       <color attach="background" args={['#061823']} />
@@ -172,12 +149,14 @@ export function Aquarium({ geometry }: { geometry: TankSceneGeometry }) {
       <Water geometry={geometry} />
 
       <group position={[0, geometry.fishCenterY, 0]}>
-        {FISH.map(({ id, ...initialState }) => (
+        {fish.map(({ id, species, ...seed }) => (
           <Fish
             bounds={geometry.fishBounds}
-            initialState={scaleFishState(initialState, geometry)}
             key={id}
             modelScale={geometry.fishScale}
+            seed={scaleFishSeed(seed, geometry)}
+            species={FISH_SPECIES[species]}
+            speciesId={species}
           />
         ))}
       </group>

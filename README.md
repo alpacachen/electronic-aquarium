@@ -5,9 +5,11 @@
 ## 当前阶段
 
 - Three.js 场景：玻璃鱼缸、水体和水面。
-- 4 条带骨骼动画的写实金鱼持续游动，并在水体边界转向。
+- 五个鱼种（金鱼、尖吻鲈、小丑鱼、金枪鱼、蓝刀鲷）持续游动，并在水体边界转向。
+- 每条鱼守着自己的水层上下巡游，升降时抬头低头，游速有快有慢；同种鱼也不会齐步走。
+- 鱼市面板可以按鱼种增减，缸里养多少条由水体容量决定。
 - 鼠标拖动旋转视角，滚轮缩放。
-- 小屏提供基础布局；当前不包含本地存储、后端和外部模型资源。
+- 小屏提供基础布局；当前不包含本地存储和后端，鱼群的增减不会跨刷新保留。
 
 ## 开发
 
@@ -36,6 +38,7 @@ pnpm check
 
 - `src/testing/aquariumPage.tsx`：唯一的测试入口，把应用包装成"观众看到的鱼缸"。
 - `src/aquarium/viewingTheAquarium.test.tsx`：打开页面看鱼游动。
+- `src/aquarium/stockingTheTank.test.tsx`：在鱼市里增减鱼。
 - `src/aquarium/choosingATankSize.test.tsx`：切换鱼缸尺寸。
 - `src/aquarium/movingTheCamera.test.tsx`：拖动和滚轮操作镜头。
 
@@ -45,12 +48,18 @@ pnpm check
 用 `frameloop="never"` 接过时钟，再由 `letTimePass(秒)` 按固定步长推进帧。这样
 长时间运动也能快速完成，且每次结果一致。
 
+同理，交互测试文件是串行跑的（`fileParallelism: false`）：每个文件都要驱动自己的
+WebGL 画布，几个文件一起抢同一个软件光栅化器时，单独都能过的用例反而会集体超时。
+
 ## 目录约定
 
 - `src/aquarium/fishSimulation.ts`：无渲染依赖的鱼运动规则。
 - `src/aquarium/fishSimulation.test.ts`：鱼运动规则的快速单元测试。
+- `src/aquarium/fishSpecies.ts`：每个鱼种的模型、动画、比例和性子。
+- `src/aquarium/stocking.ts`：把鱼种和数量变成一缸各有差异的鱼，以及容量上限。
 - `src/aquarium/tankPresets.ts`：鱼缸尺寸预设与场景几何换算。
 - `src/aquarium/tankPresets.test.ts`：鱼缸尺寸与场景换算的单元测试。
 - `src/aquarium/Fish.tsx`：把模拟状态映射到 3D 鱼对象。
+- `src/aquarium/FishMarket.tsx`：增减鱼的面板。
 - `src/aquarium/Aquarium.tsx`：鱼缸场景、灯光和相机控制。
-- `public/models/goldfish/`：金鱼 GLB 模型及 CC BY 署名信息。
+- `public/models/*/`：各鱼种的 GLB 模型及署名信息，见 `docs/fish-assets.md`。

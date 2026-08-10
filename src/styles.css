@@ -72,12 +72,7 @@ body {
 }
 
 .tank-selector {
-  position: absolute;
-  top: 42px;
-  right: 48px;
-  z-index: 1;
   display: grid;
-  width: 290px;
   gap: 0.45rem;
   padding: 0.9rem 1rem;
   border: 1px solid rgb(129 216 231 / 24%);
@@ -116,6 +111,115 @@ body {
   letter-spacing: 0.06em;
 }
 
+/**
+ * The two right-hand panels share a column so they can never overlap each other,
+ * however tall the market's list grows.
+ */
+.side-panels {
+  position: absolute;
+  top: 42px;
+  right: 48px;
+  z-index: 1;
+  display: grid;
+  width: 290px;
+  gap: 14px;
+  max-height: calc(100% - 130px);
+  align-content: start;
+  /**
+   * The column is only a layout box; the gap between its two panels sits over the
+   * tank, and a viewer dragging there means to swing the camera. Each panel takes
+   * its own events back below.
+   */
+  pointer-events: none;
+}
+
+.side-panels > * {
+  pointer-events: auto;
+}
+
+.fish-market {
+  padding: 0.9rem 1rem;
+  border: 1px solid rgb(129 216 231 / 24%);
+  border-radius: 14px;
+  background: rgb(4 25 35 / 72%);
+  backdrop-filter: blur(12px);
+}
+
+.fish-market h2 {
+  margin: 0 0 0.7rem;
+  color: #64d9e8;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.fish-market ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  gap: 0.3rem;
+  list-style: none;
+}
+
+.fish-market li {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.fish-market__name {
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+}
+
+.fish-market__count {
+  min-width: 2rem;
+  color: #a5cdd7;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.fish-market button {
+  display: grid;
+  width: 1.65rem;
+  height: 1.65rem;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(165 226 235 / 34%);
+  border-radius: 7px;
+  color: #effcff;
+  background: #0b2b38;
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fish-market button:hover:not(:disabled) {
+  border-color: rgb(100 217 232 / 70%);
+  background: #10394a;
+}
+
+.fish-market button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.fish-market button:focus-visible {
+  outline: 2px solid #64d9e8;
+  outline-offset: 2px;
+}
+
+.fish-market__total {
+  margin: 0.75rem 0 0;
+  color: #a5cdd7;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+}
+
 .control-hint {
   position: absolute;
   right: 48px;
@@ -151,12 +255,16 @@ body {
     font-size: 0.8rem;
   }
 
-  .tank-selector {
+  /**
+   * Kept to a column on the right even on a narrow screen. Stretching it across
+   * the full width would leave nowhere to grab the tank, since a drag anywhere
+   * under the panels swings nothing.
+   */
+  .side-panels {
+    top: 24px;
     right: 16px;
-    bottom: 64px;
-    left: 16px;
-    top: auto;
-    width: auto;
+    width: min(290px, 62vw);
+    max-height: calc(100% - 150px);
   }
 
   .control-hint {

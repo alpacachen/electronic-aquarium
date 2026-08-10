@@ -22,9 +22,137 @@ describe('观赏鱼缸', () => {
     aquarium.letTimePass(0.1)
     const fish = aquarium.fish()
 
-    // Then 缸里有四条鱼，没有两条朝着同一个方向
-    expect(fish).toHaveLength(4)
-    expect(new Set(fish.map(({ headingY }) => headingY)).size).toBe(4)
+    // Then 缸里有六条鱼、五个不同模型的鱼种，没有两条朝着同一个方向
+    expect(fish).toHaveLength(6)
+    expect(new Set(fish.map(({ species }) => species))).toEqual(
+      new Set(['barramundi', 'blueTang', 'clownfish', 'goldfish', 'tuna']),
+    )
+    expect(new Set(fish.map(({ headingY }) => headingY)).size).toBe(6)
+  })
+
+  it('让每个鱼种的体型都和缸里的其他鱼相称', () => {
+    // Given 每个鱼种都有一条鱼在缸里
+    aquarium.letTimePass(0.1)
+    const bySpecies = new Map(aquarium.fish().map((fish) => [fish.species, fish]))
+
+    // Then 没有哪一种鱼的体长是另一种的两倍以上
+    const lengths = [...bySpecies.values()].map(({ bodyLength }) => bodyLength)
+    expect(Math.max(...lengths)).toBeLessThan(Math.min(...lengths) * 2)
+  })
+
+  it('让没有骨骼动画的鱼种也会摆尾', () => {
+    aquarium.letTimePass(1)
+    const before = aquarium.fish().find(({ species }) => species === 'barramundi')!.tailAngle
+
+    aquarium.letTimePass(0.2)
+
+    const after = aquarium.fish().find(({ species }) => species === 'barramundi')!.tailAngle
+    expect(after).not.toBe(before)
+  })
+
+  it('让每个自带游泳动画的鱼种都真的动起来', () => {
+    // Given 入场过渡结束后，记下每个鱼种的姿态
+    aquarium.letTimePass(1)
+    const before = new Map(aquarium.fish().map(({ species, poseKey }) => [species, poseKey]))
+
+    // When 过去一小会儿
+    aquarium.letTimePass(0.3)
+
+    // Then 除了靠程序化摆尾的 barramundi，其余鱼种的骨骼都换了姿态
+    aquarium.fish().forEach(({ poseKey, species }) => {
+      if (species === 'barramundi') return
+      expect(poseKey, species).not.toBe(before.get(species))
+    })
+  })
+
+  it('让鱼在水里上下游，而不只是贴着一层平移', () => {
+    // Given 记下每条鱼此刻的高度
+    const start = aquarium.fish().map(({ position }) => position.y)
+    const seen = start.map((y) => ({ max: y, min: y }))
+
+    // When 观众看了二十秒
+    for (let second = 0; second < 20; second += 1) {
+      aquarium.letTimePass(1)
+      aquarium.fish().forEach(({ position }, index) => {
+        seen[index]!.max = Math.max(seen[index]!.max, position.y)
+        seen[index]!.min = Math.min(seen[index]!.min, position.y)
+      })
+    }
+
+    // Then 每条鱼都明显换过深度，而不是停在入场那一层
+    const tank = aquarium.tank()
+    seen.forEach(({ max, min }, index) => {
+      expect(max - min, `第 ${index} 条鱼几乎没有上下移动`).toBeGreaterThan(tank.height * 0.1)
+    })
+  })
+
+  it('让鱼上浮时抬头、下潜时低头', () => {
+    // Given 让鱼群先游一会儿，越过入场姿态
+    aquarium.letTimePass(3)
+
+    /**
+     * 用很短的步长取样。俯仰角是当下的姿态，而升降量是一段时间的平均；鱼的起伏
+     * 周期只有十几秒，如果一次走满一秒，鱼可能在这一秒里就已经转头向下了，两个
+     * 量就不再描述同一个时刻。
+     */
+    const STEP = 0.25
+    const samples: Array<{ pitch: number; rising: number }> = []
+    let previous = aquarium.fish().map(({ position }) => position.y)
+
+    for (let step = 0; step < 40; step += 1) {
+      aquarium.letTimePass(STEP)
+      const now = aquarium.fish()
+      now.forEach(({ pitch, position }, index) => {
+        samples.push({ pitch, rising: position.y - previous[index]! })
+      })
+      previous = now.map(({ position }) => position.y)
+    }
+
+    /**
+     * 只看抬头低头都明显的样本。俯仰角正在穿过零点时（升降刚要反向），它的正负
+     * 没有意义，拿来比较只会得到一个和实现细节较劲的用例。
+     */
+    const moving = samples.filter(
+      ({ pitch, rising }) => Math.abs(rising) > 0.005 && Math.abs(pitch) > 0.02,
+    )
+
+    // Then 这些时刻的俯仰角方向，始终跟着升降方向走
+    expect(moving.length).toBeGreaterThan(10)
+    moving.forEach(({ pitch, rising }) => {
+      expect(Math.sign(pitch), `升降 ${rising.toFixed(3)} 时俯仰角为 ${pitch.toFixed(3)}`)
+        .toBe(Math.sign(rising))
+    })
+  })
+
+  it('不让任何一条鱼翻过来或者竖起来', () => {
+    // When 观众看了二十秒
+    for (let second = 0; second < 20; second += 1) {
+      aquarium.letTimePass(1)
+
+      // Then 鱼始终大致保持水平，没有立成一根针
+      aquarium.fish().forEach(({ pitch }) => {
+        expect(Math.abs(pitch)).toBeLessThanOrEqual(0.5)
+      })
+    }
+  })
+
+  it('让每条鱼各游各的，不会整缸同步升降', () => {
+    // Given 让鱼群游开
+    aquarium.letTimePass(5)
+
+    // When 记录半分钟里每条鱼的高度
+    const trail: number[][] = []
+    for (let second = 0; second < 30; second += 1) {
+      aquarium.letTimePass(1)
+      trail.push(aquarium.fish().map(({ position }) => position.y))
+    }
+
+    // Then 总有那么些时刻，有鱼在上浮、同时有鱼在下潜
+    const mixed = trail.slice(1).filter((heights, index) => {
+      const deltas = heights.map((y, fish) => y - trail[index]![fish]!)
+      return deltas.some((delta) => delta > 0.01) && deltas.some((delta) => delta < -0.01)
+    })
+    expect(mixed.length).toBeGreaterThan(trail.length / 4)
   })
 
   it('让每条鱼都游起来', () => {
