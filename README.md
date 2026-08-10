@@ -5,7 +5,7 @@
 ## 当前阶段
 
 - Three.js 场景：玻璃鱼缸、水体和水面。
-- 4 条程序化鱼持续游动，并在水体边界反弹。
+- 4 条带骨骼动画的写实金鱼持续游动，并在水体边界转向。
 - 鼠标拖动旋转视角，滚轮缩放。
 - 小屏提供基础布局；当前不包含本地存储、后端和外部模型资源。
 
@@ -53,3 +53,4 @@ pnpm check
 - `src/aquarium/tankPresets.test.ts`：鱼缸尺寸与场景换算的单元测试。
 - `src/aquarium/Fish.tsx`：把模拟状态映射到 3D 鱼对象。
 - `src/aquarium/Aquarium.tsx`：鱼缸场景、灯光和相机控制。
+- `public/models/goldfish/`：金鱼 GLB 模型及 CC BY 署名信息。

@@ -54,16 +54,18 @@ describe('观赏鱼缸', () => {
   it('不让任何一条鱼游出玻璃', () => {
     // Given 玻璃缸的尺寸就是水体的边界
     const tank = aquarium.tank()
+    const waterSurface = aquarium.waterSurface()
 
     // When 观众看了整整一分钟
     for (let second = 0; second < 60; second += 1) {
       aquarium.letTimePass(1)
 
       // Then 这一分钟里的每一秒，所有鱼都还在缸内
-      aquarium.fish().forEach(({ position }) => {
+      aquarium.fish().forEach(({ position, topY }) => {
         expect(Math.abs(position.x)).toBeLessThan(tank.length / 2)
         expect(Math.abs(position.y)).toBeLessThan(tank.height / 2)
         expect(Math.abs(position.z)).toBeLessThan(tank.depth / 2)
+        expect(topY).toBeLessThanOrEqual(waterSurface)
       })
     }
   })

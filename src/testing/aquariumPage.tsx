@@ -2,6 +2,7 @@ import { _roots, advance } from '@react-three/fiber'
 import { afterEach, vi } from 'vitest'
 import { page, userEvent } from 'vitest/browser'
 import { cleanup, render } from 'vitest-browser-react'
+import { Box3, Vector3 } from 'three'
 import type { Mesh, Object3D, WebGLRenderer } from 'three'
 import { App } from '../App'
 import '../styles.css'
@@ -15,14 +16,11 @@ const layout = document.createElement('style')
 layout.textContent = 'body > div { width: 100vw; height: 100vh; margin: 0 }'
 document.head.append(layout)
 
-/** A fish is a group of five meshes: body, tail, dorsal fin and two eyes. */
-const MESHES_PER_FISH = 5
-
 /** The tank is a group of three meshes: cabinet, glass box and substrate. */
 const MESHES_PER_TANK = 3
 
-/** The step the hand-driven clock takes, matching a 60fps display. */
-const FRAME_SECONDS = 1 / 60
+/** The largest simulation step accepted by Fish, keeping tests fast and exact. */
+const FRAME_SECONDS = 1 / 20
 
 /**
  * A browser only grants a handful of WebGL contexts at a time, and unmounting
@@ -53,6 +51,7 @@ export type RenderedFish = Readonly<{
   headingY: number
   scale: number
   tailAngle: number
+  topY: number
 }>
 
 export type RenderedTank = Readonly<{
@@ -62,12 +61,14 @@ export type RenderedTank = Readonly<{
 }>
 
 function readFish(group: Object3D): RenderedFish {
-  const tail = group.children[1] as Mesh
+  const tailAngle = group.getObjectByName('goldfish2Tail1_09')?.quaternion.z ?? group.rotation.y
+  const bounds = new Box3().setFromObject(group)
   return {
     headingY: group.rotation.y,
     position: { x: group.position.x, y: group.position.y, z: group.position.z },
     scale: group.scale.x,
-    tailAngle: tail.rotation.y,
+    tailAngle,
+    topY: bounds.max.y,
   }
 }
 
@@ -126,6 +127,16 @@ export async function openAquarium() {
     return found
   }
 
+  const fishGroups = () => {
+    const found: Object3D[] = []
+    scene.scene.traverse((object) => {
+      if (object.userData.aquariumFish === true) {
+        found.push(object)
+      }
+    })
+    return found
+  }
+
   /**
    * Runs the render loop for a stretch of aquarium time, in seconds.
    *
@@ -165,7 +176,7 @@ export async function openAquarium() {
 
   return {
     /** Every fish now in the scene, as the renderer placed it. */
-    fish: (): readonly RenderedFish[] => groupsOf(MESHES_PER_FISH).map(readFish),
+    fish: (): readonly RenderedFish[] => fishGroups().map(readFish),
 
     /** The glass box a viewer sees, in world units. */
     tank: (): RenderedTank => readBoxSize(groupsOf(MESHES_PER_TANK)[0]!.children[1] as Mesh),
@@ -175,6 +186,15 @@ export async function openAquarium() {
       height: scene.camera.position.y,
       position: scene.camera.position.clone(),
     }),
+
+    waterSurface: () => {
+      let surface: Object3D | undefined
+      scene.scene.traverse((object) => {
+        if (object.userData.aquariumWaterSurface === true) surface = object
+      })
+      if (!surface) throw new Error('The aquarium has no water surface.')
+      return surface.getWorldPosition(new Vector3()).y
+    },
 
     capacity: () => page.getByRole('status'),
     heading: () => page.getByRole('heading', { level: 1 }),

@@ -6,46 +6,34 @@ import { Fish } from './Fish'
 import type { FishState } from './fishSimulation'
 import type { TankSceneGeometry } from './tankPresets'
 
-const FISH: Array<FishState & { id: string; body: string; accent: string; phase: number }> = [
+const FISH: Array<FishState & { id: string }> = [
   {
-    accent: '#ffd166',
-    body: '#f28f3b',
     heading: 0.2,
     id: 'amber',
-    phase: 0,
     position: { x: -2.8, y: 0.4, z: -0.55 },
     speed: 0.72,
     turnRate: 0.16,
     verticalVelocity: 0.03,
   },
   {
-    accent: '#ff9f9f',
-    body: '#e85d75',
     heading: 2.4,
     id: 'coral',
-    phase: 1.8,
     position: { x: 2.1, y: -0.15, z: 0.55 },
     speed: 0.58,
     turnRate: -0.19,
     verticalVelocity: -0.04,
   },
   {
-    accent: '#8be9fd',
-    body: '#3185a8',
     heading: -1.2,
     id: 'blue',
-    phase: 3.2,
     position: { x: -0.8, y: -0.9, z: 0.7 },
     speed: 0.66,
     turnRate: 0.22,
     verticalVelocity: 0.05,
   },
   {
-    accent: '#f6bd60',
-    body: '#6e9f68',
     heading: 1.7,
     id: 'sage',
-    phase: 4.9,
     position: { x: 1.2, y: 1.05, z: -0.9 },
     speed: 0.5,
     turnRate: -0.14,
@@ -111,7 +99,11 @@ function Water({ geometry }: { geometry: TankSceneGeometry }) {
         />
       </mesh>
 
-      <mesh position={[0, geometry.water.surfaceY, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh
+        position={[0, geometry.water.surfaceY, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        userData={{ aquariumWaterSurface: true }}
+      >
         <planeGeometry args={[geometry.water.length, geometry.water.depth]} />
         <meshPhysicalMaterial
           color="#57d4e8"
@@ -180,15 +172,12 @@ export function Aquarium({ geometry }: { geometry: TankSceneGeometry }) {
       <Water geometry={geometry} />
 
       <group position={[0, geometry.fishCenterY, 0]}>
-        {FISH.map(({ id, body, accent, phase, ...initialState }) => (
+        {FISH.map(({ id, ...initialState }) => (
           <Fish
-            accent={accent}
-            body={body}
             bounds={geometry.fishBounds}
             initialState={scaleFishState(initialState, geometry)}
             key={id}
             modelScale={geometry.fishScale}
-            phase={phase}
           />
         ))}
       </group>
