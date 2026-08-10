@@ -3,15 +3,22 @@
 想到什么就往对应分组下面加一行。做完了把 `[ ]` 改成 `[x]`，或者直接删掉。
 分组只是为了好找，不确定归哪类就先放「未归类」。
 
+## 缺陷
+
+- [ ] 在鱼市里减少鱼之后，有些鱼会停止游动
+
 ## 工程
 
 - [ ] 修复 GitHub Actions：`packageManager` 和 workflow 里的 `version: 11` 重复
       指定 pnpm，`action-setup` 直接报错，CI 从 8bee765 起一直是红的
 - [ ] 部署到 GitHub Pages（注意 Vite `base` 要指向仓库子路径，否则模型 404）
+- [ ] 清一遍反模式：`useEffect` 滥用、该用 UI 组件的地方手写样式等
 
 ## 体验
 
 - [ ] 引入 Tailwind + shadcn/ui 优化样式（范围待定）
+- [ ] 支持中英文切换
+- [ ] 支持 dark / light 模式
 
 ## 未归类
 
