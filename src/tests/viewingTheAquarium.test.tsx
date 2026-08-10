@@ -223,25 +223,13 @@ describe('观赏鱼缸', () => {
     expect(Math.max(...turns)).toBeGreaterThan(0.2)
   })
 
-  /**
-   * 一帧的长度。`letTimePass` 按固定步长推进，给它一帧的时间就正好走一帧，
-   * 逐帧取样便能断言那些「不许突变」的性质。
-   */
-  const ONE_FRAME = 1 / 20
-
   it('不让鱼的朝向逐帧跳变，转身总是转过去的', () => {
     // Given 让鱼群游开，其中总有鱼正贴着玻璃转身
     aquarium.letTimePass(2)
 
-    /**
-     * When 一帧一帧地看十秒
-     *
-     * 每帧只读一次场景。`fish()` 要遍历整个场景图，一帧读两次会让这条用例慢到
-     * 拖垮清理钩子的超时。
-     */
+    // When 一帧一帧地看十秒
     let previous = aquarium.fish().map(({ headingY }) => headingY)
-    for (let frame = 0; frame < 200; frame += 1) {
-      aquarium.letTimePass(ONE_FRAME)
+    aquarium.eachFrame(10, () => {
       const now = aquarium.fish()
 
       // Then 没有哪条鱼在一帧之内甩过一个大角度
@@ -260,17 +248,16 @@ describe('观赏鱼缸', () => {
         expect(turned, `${species} 一帧转了 ${turned.toFixed(3)} 弧度`).toBeLessThan(0.2)
       })
       previous = now.map(({ headingY }) => headingY)
-    }
+    })
   })
 
   it('不让鱼的抬头低头逐帧跳变', () => {
     // Given 让鱼群越过入场姿态
     aquarium.letTimePass(3)
 
-    // When 一帧一帧地看十秒，每帧只读一次场景
+    // When 一帧一帧地看十秒
     let previous = aquarium.fish().map(({ pitch }) => pitch)
-    for (let frame = 0; frame < 200; frame += 1) {
-      aquarium.letTimePass(ONE_FRAME)
+    aquarium.eachFrame(10, () => {
       const now = aquarium.fish()
 
       // Then 俯仰角是渐变的，不会一帧翻过去
@@ -283,7 +270,7 @@ describe('观赏鱼缸', () => {
         expect(swung, `${species} 一帧仰了 ${swung.toFixed(3)} 弧度`).toBeLessThan(0.05)
       })
       previous = now.map(({ pitch }) => pitch)
-    }
+    })
   })
 
   it('让鱼有快有慢，而不是一成不变地匀速前进', () => {
@@ -297,8 +284,7 @@ describe('观赏鱼缸', () => {
      */
     const travelled = new Map<number, number[]>()
     let previous = aquarium.fish().map(({ position }) => position)
-    for (let frame = 0; frame < 200; frame += 1) {
-      aquarium.letTimePass(ONE_FRAME)
+    aquarium.eachFrame(10, () => {
       const now = aquarium.fish()
       now.forEach(({ position }, index) => {
         const step = Math.hypot(
@@ -309,7 +295,7 @@ describe('观赏鱼缸', () => {
         travelled.set(index, [...(travelled.get(index) ?? []), step])
       })
       previous = now.map(({ position }) => position)
-    }
+    })
 
     // Then 至少有一条鱼明显地时快时慢，且没有鱼倒着游
     const spans = [...travelled.values()].map((steps) => Math.max(...steps) / Math.min(...steps))
