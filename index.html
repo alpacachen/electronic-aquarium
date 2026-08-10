@@ -5,9 +5,108 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#061825" />
     <title>电子鱼缸</title>
+
+    <!--
+      Inlined rather than left to styles.css, which is itself a request: the
+      curtain has to be painted on the very first frame, or a viewer sees an
+      unstyled flash of text before it.
+    -->
+    <style>
+      #loading-curtain {
+        position: fixed;
+        display: grid;
+        inset: 0;
+        place-items: center;
+        color: #effcff;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        background:
+          radial-gradient(circle at 50% 32%, rgb(13 68 84 / 55%), transparent 46%),
+          #061823;
+        transition: opacity 420ms ease;
+        z-index: 2;
+      }
+
+      #loading-curtain[data-leaving] {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .loading-curtain__body {
+        width: min(320px, 74vw);
+        text-align: center;
+      }
+
+      .loading-curtain__phase {
+        color: #64d9e8;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+      }
+
+      .loading-curtain__title {
+        margin: 0.5rem 0 1.35rem;
+        font-size: 1.6rem;
+        font-weight: 520;
+        letter-spacing: -0.03em;
+      }
+
+      .loading-curtain__track {
+        overflow: hidden;
+        height: 3px;
+        border-radius: 999px;
+        background: rgb(129 216 231 / 18%);
+      }
+
+      /* No total to count towards, so the bar sweeps instead of filling. */
+      .loading-curtain__fill {
+        width: 40%;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #26bde2, #7ff0ff);
+        animation: loading-sweep 1.25s ease-in-out infinite;
+      }
+
+      @keyframes loading-sweep {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(250%); }
+      }
+
+      .loading-curtain__hint {
+        margin: 0.9rem 0 0;
+        color: #a5cdd7;
+        font-size: 0.8rem;
+        letter-spacing: 0.06em;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #loading-curtain { transition: none; }
+        .loading-curtain__fill { animation: none; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+
+    <!--
+      The fish models are a few megabytes, and until they arrive there is nothing
+      on screen: <Canvas> rethrows its Suspense fallback upward, so one pending
+      model leaves the whole canvas blank — not even the glass or the water.
+
+      The curtain therefore lives in the HTML rather than in React, so it is on
+      screen from the first paint, before any JavaScript has run. The app removes
+      it once the models are in hand.
+    -->
+    <div id="loading-curtain">
+      <div class="loading-curtain__body">
+        <span class="loading-curtain__phase">PHASE 01</span>
+        <p class="loading-curtain__title">正在注水</p>
+        <div class="loading-curtain__track">
+          <div class="loading-curtain__fill"></div>
+        </div>
+        <p class="loading-curtain__hint">正在把鱼放进缸里</p>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
