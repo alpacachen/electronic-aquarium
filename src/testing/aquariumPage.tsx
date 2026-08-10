@@ -5,7 +5,10 @@ import { cleanup, render } from 'vitest-browser-react'
 import { Box3, Vector3 } from 'three'
 import type { Mesh, Object3D, WebGLRenderer } from 'three'
 import { App } from '../App'
+import { quietDependencyWarnings } from './quietDependencyWarnings'
 import '../styles.css'
+
+quietDependencyWarnings()
 
 /**
  * The app fills its host element, but the test container is an unsized div.
