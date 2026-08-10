@@ -11,6 +11,9 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # The suite drives a real browser, so a hang looks like a job that never
+    # finishes. Without a limit GitHub waits six hours before killing it.
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -32,7 +32,8 @@ pnpm dev
 pnpm check
 ```
 
-`pnpm check` 会依次运行行为测试、TypeScript 检查和生产构建。
+`pnpm check` 会依次运行交互测试、TypeScript 检查和生产构建。测试只有一套，
+`pnpm test` 就是它。
 
 想看构建产物在线上那个子路径下的样子，用 `pnpm exec vite preview`：它和构建一样把
 站点挂在 `/electronic-aquarium/` 下，所以模型少了会在本地就露出来。开发服务器和交互
@@ -40,19 +41,26 @@ pnpm check
 
 ## 测试
 
-纯函数测试在 Node.js 中运行，交互测试跑在真实的 Chromium 里（Vitest browser mode）。
-交互用例会渲染整个应用、
-操作页面上的控件，再断言观众看得见的结果：DOM 上的文字，以及 WebGL 真正渲染
-出来的鱼缸和鱼。
+**只写交互测试，不写函数级单元测试。** 测试全都放在 `src/tests/`，跑在真实的
+Chromium 里（Vitest browser mode）：渲染整个应用、操作页面上的控件，再断言观众看得
+见的结果——DOM 上的文字，以及 WebGL 真正渲染出来的鱼缸和鱼。
 
-- `src/testing/aquariumPage.tsx`：唯一的测试入口，把应用包装成"观众看到的鱼缸"。
-- `src/testing/quietDependencyWarnings.ts`：滤掉依赖自己打的、我们改不动的过时警告。
-- `src/aquarium/viewingTheAquarium.test.tsx`：打开页面看鱼游动。
-- `src/aquarium/stockingTheTank.test.tsx`：在鱼市里增减鱼。
-- `src/aquarium/choosingATankSize.test.tsx`：切换鱼缸尺寸。
-- `src/aquarium/movingTheCamera.test.tsx`：拖动和滚轮操作镜头。
+这条是刻意的取舍。单测锁的是函数签名，重构时最先碎掉，而且它保证不了「观众真的看到
+鱼在游」；交互测试贵一些、慢一些，但它挂了就说明产品坏了。所以新增行为请从
+`openAquarium()` 出发写，不要因为「这个函数好测」就退回去加一份单测。
+
+- `src/tests/aquariumPage.tsx`：唯一的测试入口，把应用包装成"观众看到的鱼缸"。
+- `src/tests/quietDependencyWarnings.ts`：滤掉依赖自己打的、我们改不动的过时警告。
+- `src/tests/viewingTheAquarium.test.tsx`：打开页面看鱼游动。
+- `src/tests/stockingTheTank.test.tsx`：在鱼市里增减鱼。
+- `src/tests/choosingATankSize.test.tsx`：切换鱼缸尺寸。
+- `src/tests/movingTheCamera.test.tsx`：拖动和滚轮操作镜头。
 
 每个用例按 Given / When / Then 三段写成，注释直接标出这三步。
+
+写完一条用例，把被测的那行代码改坏，确认它真的会挂。断言的阈值尤其容易写宽——留着
+十几倍余量的阈值看着是绿的，其实什么都没盯住。阈值旁边写清实测值是多少、为什么留这么
+多余量。
 
 无头浏览器用软件光栅化跑 WebGL，只有几帧每秒，所以交互测试不靠真实时间等待，而是
 用 `frameloop="never"` 接过时钟，再由 `letTimePass(秒)` 按固定步长推进帧。这样
@@ -62,17 +70,16 @@ pnpm check
 WebGL 画布，几个文件一起抢同一个软件光栅化器时，单独都能过的用例反而会集体超时。
 
 测试日志只留我们能动手改的东西。依赖自己打的过时警告（比如 fiber 9 每建一个画布就
-建一个已废弃的 `THREE.Clock`）由 `src/testing/quietDependencyWarnings.ts` 按整条
+建一个已废弃的 `THREE.Clock`）由 `src/tests/quietDependencyWarnings.ts` 按整条
 消息滤掉，别的警告照旧打出来。要静音新的一条，往那份清单里加，并写清为什么我们改不动。
 
 ## 目录约定
 
+- `src/tests/`：所有测试，以及它们唯一的入口 `aquariumPage.tsx`。
 - `src/aquarium/fishSimulation.ts`：无渲染依赖的鱼运动规则。
-- `src/aquarium/fishSimulation.test.ts`：鱼运动规则的快速单元测试。
 - `src/aquarium/fishSpecies.ts`：每个鱼种的模型、动画、比例和性子。
 - `src/aquarium/stocking.ts`：把鱼种和数量变成一缸各有差异的鱼，以及容量上限。
 - `src/aquarium/tankPresets.ts`：鱼缸尺寸预设与场景几何换算。
-- `src/aquarium/tankPresets.test.ts`：鱼缸尺寸与场景换算的单元测试。
 - `src/aquarium/Fish.tsx`：把模拟状态映射到 3D 鱼对象。
 - `src/aquarium/FishMarket.tsx`：增减鱼的面板。
 - `src/aquarium/Aquarium.tsx`：鱼缸场景、灯光和相机控制。

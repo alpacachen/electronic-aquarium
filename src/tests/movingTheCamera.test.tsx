@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { openAquarium } from '../testing/aquariumPage'
-import type { AquariumPage } from '../testing/aquariumPage'
+import { openAquarium } from './aquariumPage'
+import type { AquariumPage } from './aquariumPage'
 
 describe('挪动镜头', () => {
   let aquarium: AquariumPage

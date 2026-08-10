@@ -228,6 +228,35 @@ export async function openAquarium() {
   }
 
   /**
+   * Runs the loop one frame at a time, handing each frame to `sample`.
+   *
+   * For the tests that assert nothing may change abruptly between two frames.
+   * Calling `letTimePass(ONE_FRAME)` in a loop would do the same stepping, but it
+   * paints every frame — the suppression above only skips the frames before the
+   * last, and every call has a last frame. Painting each one in software costs
+   * more than the whole rest of the file, so this keeps the paint suppressed
+   * throughout and draws once at the end.
+   */
+  const eachFrame = (seconds: number, sample: () => void) => {
+    const frames = Math.max(1, Math.round(seconds / FRAME_SECONDS))
+    const { internal } = scene
+    const priority = internal.priority
+
+    internal.priority = 1
+    try {
+      for (let frame = 0; frame < frames; frame += 1) {
+        elapsed += FRAME_SECONDS
+        advance(elapsed, true, scene)
+        sample()
+      }
+    } finally {
+      internal.priority = priority
+    }
+
+    advance(elapsed, true, scene)
+  }
+
+  /**
    * Waits until the scene holds the expected number of fish, stepping the clock
    * so React can commit and each new model can mount. The loop is driven by hand
    * because the canvas is paused; nothing would progress on wall-clock time.
@@ -389,6 +418,7 @@ export async function openAquarium() {
       letTimePass(0.5)
     },
 
+    eachFrame,
     letTimePass,
   }
 }
