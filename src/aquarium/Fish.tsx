@@ -37,6 +37,7 @@ export function Fish({ bounds, modelScale, seed, species, speciesId }: FishProps
   const fishRef = useRef<Group>(null)
   const modelRef = useRef<Group>(null)
   const stateRef = useRef(createFish(seed, bounds))
+  const boundsRef = useRef(bounds)
   const animationTimeRef = useRef(0)
   const tailUniformsRef = useRef<Array<{ value: number }>>([])
   const { animations, scene } = useGLTF(species.modelUrl)
@@ -140,6 +141,24 @@ export function Fish({ bounds, modelScale, seed, species, speciesId }: FishProps
   }, [model])
 
   useFrame((_, delta) => {
+    if (boundsRef.current !== bounds) {
+      const previous = boundsRef.current
+      const fish = stateRef.current
+      stateRef.current = {
+        ...fish,
+        cruise: seed.cruise,
+        position: {
+          x: (fish.position.x * bounds.x) / previous.x,
+          y: (fish.position.y * bounds.y) / previous.y,
+          z: (fish.position.z * bounds.z) / previous.z,
+        },
+        speed: seed.speed,
+        turnRate: seed.turnRate,
+        verticalVelocity: (fish.verticalVelocity * bounds.y) / previous.y,
+      }
+      boundsRef.current = bounds
+    }
+
     const elapsed = Math.min(delta, MAX_FRAME_DELTA)
     stateRef.current = stepFish(stateRef.current, elapsed, bounds)
     animationTimeRef.current += elapsed
