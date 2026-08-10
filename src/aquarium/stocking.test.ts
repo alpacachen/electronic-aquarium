@@ -92,4 +92,56 @@ describe('stockTank', () => {
   it('没点鱼就是空缸', () => {
     expect(stockTank({})).toEqual([])
   })
+
+  /**
+   * 捞走一条鱼，不能连带把别的鱼换成另一条。以前的编号是按整缸顺序发的，捞掉前面
+   * 一条会让后面每条鱼的 id 和性子都平移一位；界面上认 id，于是那些鱼被卸掉重建，
+   * 表现就是它们凭空跳到别处、还停了动画。
+   */
+  it('捞走一条鱼，剩下的鱼还是原来那几条', () => {
+    // Given 缸里每种鱼都养着，金鱼两条
+    const before = stockTank({ barramundi: 1, blueTang: 1, clownfish: 1, goldfish: 2, tuna: 1 })
+
+    // When 捞走排在最前面的那条尖吻鲈
+    const after = stockTank({ blueTang: 1, clownfish: 1, goldfish: 2, tuna: 1 })
+
+    // Then 剩下的鱼一条都没变——连 id 带性子，整条都还是原来那条
+    const kept = before.filter(({ species }) => species !== 'barramundi')
+    expect(after).toEqual(kept)
+  })
+
+  it('添一条鱼，也不会顺手换掉别的鱼', () => {
+    // Given 缸里一条小丑鱼、两条金鱼
+    const before = stockTank({ clownfish: 1, goldfish: 2 })
+
+    // When 又添一条小丑鱼
+    const after = stockTank({ clownfish: 2, goldfish: 2 })
+
+    // Then 金鱼还是原来那两条，只是多了一条新的小丑鱼
+    expect(after).toHaveLength(before.length + 1)
+    expect(after.filter(({ species }) => species === 'goldfish')).toEqual(
+      before.filter(({ species }) => species === 'goldfish'),
+    )
+  })
+
+  it('增减之间来回折腾，老住户始终是同一条', () => {
+    // Given 一开始的缸
+    const start = stockTank({ clownfish: 1, goldfish: 2 })
+
+    // When 添一条小丑鱼、捞掉一条金鱼，再各自还原
+    stockTank({ clownfish: 2, goldfish: 2 })
+    stockTank({ clownfish: 2, goldfish: 1 })
+    const back = stockTank({ clownfish: 1, goldfish: 2 })
+
+    // Then 折腾一圈回到原样，鱼还是那几条鱼
+    expect(back).toEqual(start)
+  })
+
+  /** 不同鱼种之间的编号不能撞上，否则两条鱼会长成一模一样。 */
+  it('鱼种之间的编号互不打扰', () => {
+    const fish = stockTank(Object.fromEntries(SPECIES.map((species) => [species, 2])))
+
+    expect(new Set(fish.map(({ id }) => id)).size).toBe(fish.length)
+    expect(new Set(fish.map(({ cruise }) => cruise.phase)).size).toBe(fish.length)
+  })
 })

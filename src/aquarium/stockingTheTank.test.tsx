@@ -97,6 +97,74 @@ describe('逛鱼市', () => {
     expect(aquarium.market().canSell('小丑鱼')).toBe(true)
   })
 
+  /**
+   * 增减鱼会让缸里其余的鱼跟着重新渲染一次。这两条用例盯的是那一下之后，老住户
+   * 还在原地游、身子也还在动——曾经它们会凭空跳到别处，或者僵在水里被水推着走。
+   */
+  it('捞走一条鱼，剩下的鱼接着往前游，不会跳到别处', async () => {
+    // Given 记下每条鱼此刻在哪
+    aquarium.letTimePass(1)
+    const before = aquarium.fish().map(({ position, species }) => ({ position, species }))
+
+    // When 观众捞走一条金鱼
+    await aquarium.market().sell('金鱼')
+
+    /**
+     * Then 剩下的鱼都还在原来那一带，没有被换成另一条鱼
+     *
+     * 捞的是那个鱼种里排在最后的一条，所以拿掉它之后，其余的鱼应当原样按序留下。
+     */
+    const after = aquarium.fish()
+    const lastGoldfish = before.reduce(
+      (last, { species }, index) => (species === 'goldfish' ? index : last),
+      -1,
+    )
+    const kept = before.filter((_, index) => index !== lastGoldfish)
+
+    expect(after).toHaveLength(kept.length)
+    after.forEach(({ position, species }, index) => {
+      const was = kept[index]!
+      expect(species).toBe(was.species)
+      const jumped = Math.hypot(
+        position.x - was.position.x,
+        position.y - was.position.y,
+        position.z - was.position.z,
+      )
+      expect(jumped, `${species} 跳了 ${jumped.toFixed(3)}`).toBeLessThan(0.5)
+    })
+  })
+
+  it('增减鱼之后，缸里每条鱼的身子都还在动', async () => {
+    // Given 让鱼群先游开
+    aquarium.letTimePass(1)
+
+    // When 观众添一条又捞一条
+    await aquarium.market().buy('小丑鱼')
+    await aquarium.market().sell('金鱼')
+
+    /** 新来的鱼要过一会儿模型才挂上，太早取样读到的是还没上骨骼的空姿态。 */
+    aquarium.letTimePass(1)
+
+    /**
+     * Then 每条鱼都还在换姿态，没有僵在水里
+     *
+     * 自带骨骼动画的鱼看骨骼；barramundi 是程序化摆尾，看尾巴的相位。不把两者用
+     * 「或」并起来判断：没有 species.tail 的鱼种，tailAngle 会退回读朝向，那个值
+     * 光靠转弯就会变，僵住的鱼也能混过去。
+     */
+    const before = aquarium.fish().map(({ poseKey, tailAngle }) => ({ poseKey, tailAngle }))
+    aquarium.letTimePass(0.3)
+
+    aquarium.fish().forEach(({ poseKey, species, tailAngle }, index) => {
+      const was = before[index]!
+      if (species === 'barramundi') {
+        expect(tailAngle, `${species} 的尾巴僵住了`).not.toBe(was.tailAngle)
+        return
+      }
+      expect(poseKey, `${species} 的骨骼僵住了`).not.toBe(was.poseKey)
+    })
+  })
+
   it('捞光一个鱼种之后就不让再捞', async () => {
     // Given 缸里只有一条尖吻鲈，此刻还能捞
     expect(aquarium.market().canSell('尖吻鲈')).toBe(true)
