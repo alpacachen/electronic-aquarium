@@ -95,6 +95,67 @@ describe('挪动镜头', () => {
     expect(aquarium.camera().distance).toBeLessThan(tank.length * 6)
   })
 
+  /**
+   * 视角是观众自己摆好的，不该被界面上别处的操作碰掉。这几条盯的就是这件事：
+   * 鱼缸的取景参数是每次渲染都重算的，一旦把它当成渲染的产物交给相机，观众点一下
+   * 鱼市，镜头就被拨回默认角度。
+   *
+   * 取样之前都先把阻尼放完。镜头开着 enableDamping，松手之后还会顺着惯性滑好几秒，
+   * 这时候记下来的位置本来就要继续变——那是设计的手感，不是被谁拨回去了。
+   */
+  const settleCamera = () => aquarium.letTimePass(6)
+
+  it('在鱼市里加一条鱼，不会把视角拨回去', async () => {
+    // Given 观众把镜头转到一个自己中意的角度，并且惯性已经停下
+    await aquarium.dragAcross(-220)
+    await aquarium.dragDownwards(120)
+    settleCamera()
+    const chosen = aquarium.camera()
+
+    // When 观众去鱼市添了一条鱼
+    await aquarium.market().buy('小丑鱼')
+
+    // Then 镜头还在观众留下它的地方
+    const now = aquarium.camera()
+    expect(now.position.x).toBeCloseTo(chosen.position.x, 2)
+    expect(now.position.y).toBeCloseTo(chosen.position.y, 2)
+    expect(now.position.z).toBeCloseTo(chosen.position.z, 2)
+  })
+
+  it('从鱼市捞走一条鱼，也不会把视角拨回去', async () => {
+    // Given 观众把镜头转开，等它停稳
+    await aquarium.dragAcross(200)
+    settleCamera()
+    const chosen = aquarium.camera()
+
+    // When 观众捞走一条金鱼
+    await aquarium.market().sell('金鱼')
+
+    // Then 镜头没有动
+    const now = aquarium.camera()
+    expect(now.position.x).toBeCloseTo(chosen.position.x, 2)
+    expect(now.position.y).toBeCloseTo(chosen.position.y, 2)
+    expect(now.position.z).toBeCloseTo(chosen.position.z, 2)
+  })
+
+  it('反复增减鱼，视角始终待在观众放的位置', async () => {
+    // Given 观众摆好了角度，等它停稳
+    await aquarium.dragAcross(-160)
+    settleCamera()
+    const chosen = aquarium.camera()
+
+    // When 观众在鱼市里来回折腾
+    await aquarium.market().buy('小丑鱼')
+    await aquarium.market().sell('金鱼')
+    await aquarium.market().buy('金枪鱼')
+
+    // Then 镜头一次都没有被拨回去
+    const now = aquarium.camera()
+    expect(now.distance).toBeCloseTo(chosen.distance, 2)
+    expect(now.position.x).toBeCloseTo(chosen.position.x, 2)
+    expect(now.position.z).toBeCloseTo(chosen.position.z, 2)
+  })
+
   it('转过镜头之后鱼照旧游动', async () => {
     // Given 观众换了个角度看缸
     await aquarium.dragAcross(200)
