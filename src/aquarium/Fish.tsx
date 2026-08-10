@@ -1,7 +1,8 @@
-import { Clone, useAnimations, useGLTF } from '@react-three/drei'
+import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { MeshStandardMaterial } from 'three'
+import { clone as cloneSkinnedModel } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import type { AnimationClip, Group, Mesh } from 'three'
 import { FISH_SPECIES } from './fishSpecies'
 import type { FishSpecies, FishSpeciesId } from './fishSpecies'
@@ -45,7 +46,43 @@ export function Fish({ bounds, modelScale, seed, species, speciesId }: FishProps
       : undefined
     return source ? startAtFirstKeyframe(source) : undefined
   }, [animations, species.animation])
-  const { actions } = useAnimations(swimAnimation ? [swimAnimation] : [], modelRef)
+  /**
+   * Every fish gets its own copy of the model, skeleton included.
+   *
+   * useGLTF caches one scene per URL, and its bones are ordinary objects that can
+   * only hang in one place at a time. Mounting a second fish of a species used to
+   * adopt those shared bones and so tear them out of the fish already swimming:
+   * the tank went from 90 bones to 6 the moment a viewer bought a fish, and every
+   * older fish was left a skinned mesh with nothing to deform it — drifting along
+   * with a rigid body. SkeletonUtils' clone is the deep copy that rebinds a
+   * skinned mesh to its own bones.
+   *
+   * Memoised on the source scene so a re-render reuses the copy rather than
+   * rebuilding the model mid-swim.
+   */
+  const model = useMemo(() => {
+    const copy = cloneSkinnedModel(scene)
+    /**
+     * Materials are still shared by the copy, and the tail shader below is
+     * compiled per fish, so each one needs materials of its own — otherwise the
+     * last fish to mount would dictate how every other one waves its tail.
+     */
+    copy.traverse((object) => {
+      const mesh = object as Mesh
+      if (!mesh.isMesh) return
+      mesh.material = Array.isArray(mesh.material)
+        ? mesh.material.map((material) => material.clone())
+        : mesh.material.clone()
+    })
+    return copy
+  }, [scene])
+
+  /**
+   * The clip list has to keep its identity across renders: useAnimations treats a
+   * new array as a new set of clips, and its cleanup stops every action.
+   */
+  const clips = useMemo(() => (swimAnimation ? [swimAnimation] : []), [swimAnimation])
+  const { actions } = useAnimations(clips, modelRef)
 
   useLayoutEffect(() => {
     tailUniformsRef.current = []
@@ -85,6 +122,23 @@ export function Fish({ bounds, modelScale, seed, species, speciesId }: FishProps
     }
   }, [actions, species.animation, species.tail, swimAnimation])
 
+  /**
+   * The cloned materials hold GPU resources, and a viewer can take a fish out of
+   * the tank at any time, so they are released when this fish goes. The geometry
+   * and textures are not: those still belong to the cached GLTF that every fish
+   * of the species shares.
+   */
+  useEffect(() => {
+    return () => {
+      model.traverse((object) => {
+        const mesh = object as Mesh
+        if (!mesh.isMesh) return
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+        materials.forEach((material) => material.dispose())
+      })
+    }
+  }, [model])
+
   useFrame((_, delta) => {
     const elapsed = Math.min(delta, MAX_FRAME_DELTA)
     stateRef.current = stepFish(stateRef.current, elapsed, bounds)
@@ -119,9 +173,8 @@ export function Fish({ bounds, modelScale, seed, species, speciesId }: FishProps
       position={[seed.position.x, seed.position.y, seed.position.z]}
       scale={modelScale * species.unitScale}
     >
-      <Clone
-        deep="materialsOnly"
-        object={scene}
+      <primitive
+        object={model}
         position={[0, -species.centerY, 0]}
         ref={modelRef}
         rotation={[0, species.rotationY, 0]}

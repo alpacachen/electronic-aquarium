@@ -142,19 +142,35 @@ export function stockingCapacity(volumeLiters: number) {
 }
 
 /**
- * Stocks a tank from a count per species. Seeds run across the whole tank rather
- * than restarting per species, so no two fish anywhere share a set of traits.
+ * How far apart one species' seeds sit from the next one's. Species are numbered
+ * in their own blocks so that taking a fish out of one species leaves the others'
+ * seeds — and therefore their ids and their traits — untouched.
+ *
+ * Wide enough that no tank can ever reach the next block: the largest holds 12
+ * fish in total.
+ */
+const SEEDS_PER_SPECIES = 100
+
+/**
+ * Stocks a tank from a count per species.
+ *
+ * A fish's seed is derived from its species and its index within that species,
+ * never from its position in the tank as a whole. Numbering across the whole tank
+ * meant removing one fish renumbered every fish after it: their ids changed, so
+ * React unmounted and remounted them, and each one jumped to a new position with
+ * a different set of traits. Blocks per species keep a fish the same fish for as
+ * long as it is in the tank.
+ *
+ * Seeds still never repeat between species, so no two fish anywhere share traits.
  */
 export function stockTank(counts: Partial<Record<FishSpeciesId, number>>): StockedFish[] {
   const fish: StockedFish[] = []
-  let seed = 0
 
-  for (const species of Object.keys(FISH_SPECIES) as FishSpeciesId[]) {
+  ;(Object.keys(FISH_SPECIES) as FishSpeciesId[]).forEach((species, block) => {
     for (let index = 0; index < (counts[species] ?? 0); index += 1) {
-      fish.push(stockFish(species, seed))
-      seed += 1
+      fish.push(stockFish(species, block * SEEDS_PER_SPECIES + index))
     }
-  }
+  })
 
   return fish
 }
