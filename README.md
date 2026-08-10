@@ -11,7 +11,7 @@
 - 鼠标拖动旋转视角，滚轮缩放。
 - 小屏提供基础布局；当前不包含本地存储和后端，鱼群的增减不会跨刷新保留。
 
-接下来想做什么，记在 [docs/roadmap.md](docs/roadmap.md)。
+接下来想做什么，记在 [GitHub Issues](https://github.com/alpacachen/electronic-aquarium/issues)。
 
 ## 开发
 
