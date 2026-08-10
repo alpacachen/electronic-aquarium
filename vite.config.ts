@@ -2,7 +2,18 @@ import { playwright } from '@vitest/browser-playwright'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
-export default defineConfig({
+/**
+ * GitHub Pages serves the site from the repository's own subpath, so a built
+ * bundle has to ask for its assets there rather than at the domain root.
+ *
+ * The build and `vite preview` use it, so a preview reproduces the deployed
+ * layout and a missing asset shows up locally. The dev server and the browser
+ * tests keep serving from the root, which is where they are reachable.
+ */
+const PAGES_BASE = '/electronic-aquarium/'
+
+export default defineConfig(({ command, isPreview }) => ({
+  base: command === 'build' || isPreview ? PAGES_BASE : '/',
   plugins: [react()],
   test: {
     include: ['src/**/*.test.tsx'],
@@ -32,4 +43,4 @@ export default defineConfig({
       viewport: { height: 400, width: 600 },
     },
   },
-})
+}))

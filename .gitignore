@@ -4,3 +4,4 @@ dist
 .kangentic/
 .claude/settings.local.json
 kangentic.local.json
+.claude/worktrees/
