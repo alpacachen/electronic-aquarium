@@ -10,9 +10,9 @@ describe('挑选鱼缸尺寸', () => {
     aquarium = await openAquarium()
   })
 
-  it('列出常见的几种缸，并写清尺寸', () => {
+  it('列出常见的几种缸，并写清尺寸', async () => {
     // When 观众展开尺寸下拉框
-    const offered = aquarium.offeredTankSizes()
+    const offered = await aquarium.offeredTankSizes()
 
     // Then 从迷你到加大依次排开，每一项都带着长宽高
     expect(offered).toEqual([
@@ -27,7 +27,7 @@ describe('挑选鱼缸尺寸', () => {
   it('一开始摆的是标准缸', async () => {
     // When 观众还没有做任何选择
     // Then 下拉框停在标准缸，旁边写着它的容量
-    await expect.element(aquarium.sizePicker()).toHaveValue('standard')
+    expect(aquarium.chosenTankSize()).toBe('标准缸 · 60 × 30 × 36 cm')
     await expect.element(aquarium.capacity()).toHaveTextContent('约 64.8 L')
   })
 

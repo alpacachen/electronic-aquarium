@@ -1,274 +1,174 @@
-:root {
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  color: #effcff;
-  background: #061823;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-}
+@import 'tailwindcss';
+@import 'tw-animate-css';
+/**
+ * shadcn 组件用到的自定义变体和工具类（data-open、data-disabled……）。
+ *
+ * 这一行是 `shadcn` 那个包留在 devDependencies 里的唯一理由：它看着像只在
+ * `shadcn add` 时用得到的脚手架，其实构建期要从它解析这份样式，删掉就构建不过。
+ */
+@import 'shadcn/tailwind.css';
 
-* {
-  box-sizing: border-box;
-}
+@custom-variant dark (&:is(.dark *));
 
-html,
-body,
-#root,
-.app-shell {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-}
+/**
+ * 这只缸的一套颜色。
+ *
+ * 界面和缸里的水共用同一批值：点光源的蓝就是加载条的蓝，缸的底色就是页面的底色。
+ * 所以颜色只在这里写一次，别处一律引用。
+ *
+ * 有三处读它，各有各的读法，改颜色时三处都要跟上：
+ *
+ * 1. 面板和文字 —— Tailwind 由这些变量生成工具类（bg-abyss、text-mist……）。
+ * 2. 缸里的场景 —— Three.js 的材质拿不到 CSS 变量，由 src/aquarium/palette.ts
+ *    带一份同名的字面值过去；那份文件的注释里也写了这条对应关系。
+ * 3. 加载幕布 —— 必须在第一帧就画出来，早于任何一个样式表请求，所以它在
+ *    index.html 里内联，同样带着一份字面值。
+ *
+ * 前两处本可以由一层生成代码打通，但那要给一个观赏鱼缸加上构建期的代码生成；
+ * 幕布那处则是绕不过去的，它就是要早于 CSS。所以这里选择靠约定同步，代价是改色
+ * 时要动三个地方。
+ */
+@theme {
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
 
-body {
-  min-width: 1024px;
-  overflow: hidden;
-}
+  /* 页面与场景的底色，也是雾的颜色 */
+  --color-abyss: #061823;
+  /* 底色上那团光晕 */
+  --color-shell: #0d4454;
+  /* 正文 */
+  --color-ink: #effcff;
+  /* 次要文字：容量、条数、操作提示 */
+  --color-mist: #a5cdd7;
+  /* 强调：小标题、聚焦环、加载条 */
+  --color-lagoon: #64d9e8;
 
-.app-shell {
-  position: relative;
-  background:
-    radial-gradient(circle at 50% 30%, rgb(13 68 84 / 45%), transparent 44%),
-    #061823;
-}
+  /* 面板底，配透明度用（bg-surface/72） */
+  --color-surface: #041923;
+  /* 浮层底：下拉弹层压在 3D 场景上，要不透明才读得清 */
+  --color-raised: #08283a;
+  /* 面板与提示的描边，配透明度用（border-glass/24） */
+  --color-glass: #81d8e7;
+  /* 控件底与它的悬停态 */
+  --color-control: #0b2b38;
+  --color-control-hover: #10394a;
 
-.webgl-fallback {
-  display: grid;
-  width: 100%;
-  height: 100%;
-  place-items: center;
-  padding: 2rem;
-  color: #a5cdd7;
-  text-align: center;
-}
-
-.title-card {
-  position: absolute;
-  top: 42px;
-  left: 48px;
-  pointer-events: none;
-  z-index: 1;
-  text-shadow: 0 2px 24px rgb(0 10 18 / 70%);
-}
-
-.title-card span {
-  color: #64d9e8;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.24em;
-}
-
-.title-card h1 {
-  margin: 0.45rem 0 0;
-  font-size: clamp(2.2rem, 4vw, 4.6rem);
-  font-weight: 520;
-  letter-spacing: -0.055em;
-}
-
-.title-card p {
-  margin: 0.55rem 0 0;
-  color: #a5cdd7;
-  font-size: 0.95rem;
-  letter-spacing: 0.08em;
-}
-
-.tank-selector {
-  display: grid;
-  gap: 0.45rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid rgb(129 216 231 / 24%);
-  border-radius: 14px;
-  background: rgb(4 25 35 / 72%);
-  backdrop-filter: blur(12px);
-}
-
-.tank-selector label {
-  color: #64d9e8;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.tank-selector select {
-  width: 100%;
-  padding: 0.55rem 0.65rem;
-  border: 1px solid rgb(165 226 235 / 34%);
-  border-radius: 8px;
-  color: #effcff;
-  background: #0b2b38;
-  font: inherit;
-  cursor: pointer;
-}
-
-.tank-selector select:focus-visible {
-  outline: 2px solid #64d9e8;
-  outline-offset: 2px;
-}
-
-.tank-selector output {
-  color: #a5cdd7;
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
+  /* 以下几种只有缸里的场景用得到，见 palette.ts */
+  --color-cabinet: #10191e;
+  --color-pane: #bceeff;
+  --color-pane-edge: #7bc5da;
+  --color-substrate: #bfa67b;
+  --color-water: #087f9e;
+  --color-waterline: #57d4e8;
+  --color-sunlight: #d8f7ff;
+  --color-lamp: #26bde2;
+  --color-floor: #071219;
 }
 
 /**
- * The two right-hand panels share a column so they can never overlap each other,
- * however tall the market's list grows.
+ * shadcn 的组件按语义色写成（bg-popover、border-input……），这里把那套语义接到
+ * 上面的鱼缸配色上。
+ *
+ * 这只缸只有暗色一套，所以变量写在 :root 而不是 .dark 下，页面也不挂 dark 类：
+ * 组件里 dark: 前缀的那些微调（比如 SelectTrigger 的 dark:bg-input/30）因此不会
+ * 生效，需要的地方在调用处直接给类。dark 变体本身留着，将来真要加浅色主题时还用它。
  */
-.side-panels {
-  position: absolute;
-  top: 42px;
-  right: 48px;
-  z-index: 1;
-  display: grid;
-  width: 290px;
-  gap: 14px;
-  max-height: calc(100% - 130px);
-  align-content: start;
+@theme inline {
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: calc(var(--radius) - 1px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: var(--color-abyss);
+  --foreground: var(--color-ink);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-raised);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-lagoon);
+  --primary-foreground: var(--color-abyss);
+  --secondary: var(--color-control);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-control);
+  --muted-foreground: var(--color-mist);
+  --accent: var(--color-control-hover);
+  --accent-foreground: var(--color-ink);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: --alpha(var(--color-glass) / 24%);
+  --input: --alpha(var(--color-glass) / 34%);
+  --ring: var(--color-lagoon);
+  --chart-1: var(--color-lagoon);
+  --chart-2: var(--color-waterline);
+  --chart-3: var(--color-water);
+  --chart-4: var(--color-substrate);
+  --chart-5: var(--color-pane-edge);
+  --sidebar: var(--color-surface);
+  --sidebar-foreground: var(--color-ink);
+  --sidebar-primary: var(--color-lagoon);
+  --sidebar-primary-foreground: var(--color-abyss);
+  --sidebar-accent: var(--color-control-hover);
+  --sidebar-accent-foreground: var(--color-ink);
+  --sidebar-border: --alpha(var(--color-glass) / 24%);
+  --sidebar-ring: var(--color-lagoon);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
   /**
-   * The column is only a layout box; the gap between its two panels sits over the
-   * tank, and a viewer dragging there means to swing the camera. Each panel takes
-   * its own events back below.
+   * 这四层要一路撑满视口高度，缸才有地方铺开：#root 之下就是 App 的外壳，它靠
+   * h-full 顶到底，而 h-full 只有在每一级祖先都有高度时才成立。
    */
-  pointer-events: none;
-}
+  html,
+  body,
+  #root {
+    @apply h-full w-full;
+  }
 
-.side-panels > * {
-  pointer-events: auto;
-}
-
-.fish-market {
-  padding: 0.9rem 1rem;
-  border: 1px solid rgb(129 216 231 / 24%);
-  border-radius: 14px;
-  background: rgb(4 25 35 / 72%);
-  backdrop-filter: blur(12px);
-}
-
-.fish-market h2 {
-  margin: 0 0 0.7rem;
-  color: #64d9e8;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.fish-market ul {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  gap: 0.3rem;
-  list-style: none;
-}
-
-.fish-market li {
-  display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.fish-market__name {
-  font-size: 0.86rem;
-  letter-spacing: 0.04em;
-}
-
-.fish-market__count {
-  min-width: 2rem;
-  color: #a5cdd7;
-  font-size: 0.78rem;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.fish-market button {
-  display: grid;
-  width: 1.65rem;
-  height: 1.65rem;
-  place-items: center;
-  padding: 0;
-  border: 1px solid rgb(165 226 235 / 34%);
-  border-radius: 7px;
-  color: #effcff;
-  background: #0b2b38;
-  font: inherit;
-  font-size: 0.95rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.fish-market button:hover:not(:disabled) {
-  border-color: rgb(100 217 232 / 70%);
-  background: #10394a;
-}
-
-.fish-market button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.fish-market button:focus-visible {
-  outline: 2px solid #64d9e8;
-  outline-offset: 2px;
-}
-
-.fish-market__total {
-  margin: 0.75rem 0 0;
-  color: #a5cdd7;
-  font-size: 0.76rem;
-  letter-spacing: 0.06em;
-}
-
-.control-hint {
-  position: absolute;
-  right: 48px;
-  bottom: 38px;
-  padding: 0.65rem 0.9rem;
-  border: 1px solid rgb(129 216 231 / 24%);
-  border-radius: 999px;
-  color: #a5cdd7;
-  font-size: 0.76rem;
-  letter-spacing: 0.08em;
-  pointer-events: none;
-  background: rgb(4 25 35 / 54%);
-  backdrop-filter: blur(10px);
-  z-index: 1;
-}
-
-@media (max-width: 720px) {
   body {
-    min-width: 0;
+    /* 缸是横着看的，1024 以下由下面的响应式类各自收窄，不再压缩布局 */
+    @apply min-w-256 overflow-hidden bg-background font-sans text-foreground antialiased;
   }
 
-  .title-card {
-    top: 24px;
-    left: 24px;
-  }
-
-  .title-card h1 {
-    font-size: clamp(2rem, 12vw, 3.4rem);
-  }
-
-  .title-card p {
-    max-width: 14rem;
-    font-size: 0.8rem;
-  }
-
-  /**
-   * Kept to a column on the right even on a narrow screen. Stretching it across
-   * the full width would leave nowhere to grab the tank, since a drag anywhere
-   * under the panels swings nothing.
-   */
-  .side-panels {
-    top: 24px;
-    right: 16px;
-    width: min(290px, 62vw);
-    max-height: calc(100% - 150px);
-  }
-
-  .control-hint {
-    right: 16px;
-    bottom: 16px;
+  @media (width <= 720px) {
+    body {
+      @apply min-w-0;
+    }
   }
 }

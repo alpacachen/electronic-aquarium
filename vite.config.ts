@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite'
 import { playwright } from '@vitest/browser-playwright'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
@@ -14,7 +15,17 @@ const PAGES_BASE = '/electronic-aquarium/'
 
 export default defineConfig(({ command, isPreview }) => ({
   base: command === 'build' || isPreview ? PAGES_BASE : '/',
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
+  /**
+   * `@/` points at src/, which is the alias shadcn's components import through.
+   * A URL relative to this file rather than to the process's working directory,
+   * so it resolves the same however vite was launched.
+   */
+  resolve: {
+    alias: {
+      '@': new URL('./src', import.meta.url).pathname,
+    },
+  },
   test: {
     /**
      * Every test lives in src/tests/ and drives the whole app through a real
