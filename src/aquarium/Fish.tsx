@@ -1,7 +1,7 @@
 import { Clone, useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useLayoutEffect, useRef } from 'react'
-import type { Group } from 'three'
+import { useLayoutEffect, useMemo, useRef } from 'react'
+import type { AnimationClip, Group } from 'three'
 import { stepFish } from './fishSimulation'
 import type { AquariumBounds, FishState } from './fishSimulation'
 
@@ -19,20 +19,38 @@ const MODEL_UNIT_SCALE = 7.5
 const MODEL_CENTER_Y = 0.0613
 const MAX_FRAME_DELTA = 0.05
 
+function startAtFirstKeyframe(source: AnimationClip) {
+  const clip = source.clone()
+  const firstKeyframe = Math.min(
+    ...clip.tracks.map((track) => track.times[0] ?? Number.POSITIVE_INFINITY),
+  )
+
+  if (Number.isFinite(firstKeyframe) && firstKeyframe > 0) {
+    clip.tracks.forEach((track) => track.shift(-firstKeyframe))
+    clip.resetDuration()
+  }
+
+  return clip
+}
+
 export function Fish({ bounds, initialState, modelScale }: FishProps) {
   const fishRef = useRef<Group>(null)
   const modelRef = useRef<Group>(null)
   const stateRef = useRef(initialState)
   const { animations, scene } = useGLTF(GOLDFISH_URL)
-  const { actions } = useAnimations(animations, modelRef)
+  const swimAnimation = useMemo(() => {
+    const source = animations.find(({ name }) => name === 'Swim_Slow') ?? animations[0]
+    return source ? startAtFirstKeyframe(source) : undefined
+  }, [animations])
+  const { actions } = useAnimations(swimAnimation ? [swimAnimation] : [], modelRef)
 
   useLayoutEffect(() => {
-    const swim = actions.Swim_Slow ?? actions.float
+    const swim = swimAnimation ? actions[swimAnimation.name] : undefined
     swim?.reset().fadeIn(0.25).play()
     return () => {
       swim?.fadeOut(0.25)
     }
-  }, [actions])
+  }, [actions, swimAnimation])
 
   useFrame((_, delta) => {
     const elapsed = Math.min(delta, MAX_FRAME_DELTA)

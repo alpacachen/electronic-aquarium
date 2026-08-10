@@ -3,6 +3,9 @@ import { stepFish } from './fishSimulation'
 
 const bounds = { x: 4.35, y: 2, z: 1.95 }
 
+const angleBetween = (left: number, right: number) =>
+  Math.abs(Math.atan2(Math.sin(left - right), Math.cos(left - right)))
+
 describe('stepFish', () => {
   it('moves a fish according to its heading and speed', () => {
     const fish = {
@@ -43,19 +46,29 @@ describe('stepFish', () => {
     expect(stepFish(fish, -1, bounds)).toEqual(fish)
   })
 
-  it('keeps a fish inside the tank and reflects its heading at a wall', () => {
-    const fish = {
-      position: { x: 4, y: 0, z: 0 },
+  it('turns toward the tank before reaching a wall without snapping around', () => {
+    let fish = {
+      position: { x: 3.4, y: 0, z: 0.4 },
       heading: 0,
-      speed: 2,
+      speed: 1.4,
       turnRate: 0,
       verticalVelocity: 0,
     }
 
-    const next = stepFish(fish, 1, bounds)
+    const first = stepFish(fish, 1 / 60, bounds)
 
-    expect(next.position.x).toBe(bounds.x)
-    expect(next.heading).toBe(Math.PI)
+    expect(first.position.x).toBeGreaterThan(fish.position.x)
+    expect(angleBetween(first.heading, fish.heading)).toBeGreaterThan(0)
+    expect(angleBetween(first.heading, fish.heading)).toBeLessThan(0.15)
+
+    for (let frame = 0; frame < 300; frame += 1) {
+      const next = stepFish(fish, 1 / 60, bounds)
+      expect(angleBetween(next.heading, fish.heading)).toBeLessThan(0.15)
+      fish = next
+    }
+
+    expect(Math.abs(fish.position.x)).toBeLessThanOrEqual(bounds.x)
+    expect(Math.abs(fish.position.z)).toBeLessThanOrEqual(bounds.z)
   })
 
   it('keeps a turning fish inside the water over many frames', () => {

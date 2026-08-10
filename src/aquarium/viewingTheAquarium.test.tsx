@@ -41,7 +41,8 @@ describe('观赏鱼缸', () => {
   })
 
   it('让鱼一边游一边摆尾', () => {
-    // Given 记下第一条鱼尾巴的角度
+    // Given 入场过渡结束后，记下第一条鱼尾巴的角度
+    aquarium.letTimePass(1)
     const before = aquarium.fish()[0]!.tailAngle
 
     // When 过去一小会儿
@@ -80,13 +81,18 @@ describe('观赏鱼缸', () => {
       trail.push(aquarium.fish().map(({ headingY }) => headingY))
     }
 
-    // Then 有鱼在撞上玻璃时猛地调头，而不是停在原地或穿出去
-    const turnedSharply = trail
+    // Then 鱼会持续改变方向；逐帧是否平滑由模拟层的回归测试负责
+    const turns = trail
       .slice(1)
-      .some((headings, index) =>
-        headings.some((heading, fish) => Math.abs(heading - trail[index]![fish]!) > 1.5),
+      .flatMap((headings, index) =>
+        headings.map((heading, fish) =>
+          Math.abs(Math.atan2(
+            Math.sin(heading - trail[index]![fish]!),
+            Math.cos(heading - trail[index]![fish]!),
+          )),
+        ),
       )
-    expect(turnedSharply).toBe(true)
+    expect(Math.max(...turns)).toBeGreaterThan(0.2)
   })
 
   it('让鱼群游遍整个缸，而不是挤在一角', () => {

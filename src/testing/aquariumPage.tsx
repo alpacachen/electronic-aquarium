@@ -61,7 +61,7 @@ export type RenderedTank = Readonly<{
 }>
 
 function readFish(group: Object3D): RenderedFish {
-  const tailAngle = group.getObjectByName('goldfish2Tail1_09')?.quaternion.z ?? group.rotation.y
+  const tailAngle = group.getObjectByName('goldfish2Tail1_021')?.quaternion.z ?? group.rotation.y
   const bounds = new Box3().setFromObject(group)
   return {
     headingY: group.rotation.y,
