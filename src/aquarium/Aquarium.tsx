@@ -91,13 +91,35 @@ function Water({ geometry }: { geometry: TankSceneGeometry }) {
   )
 }
 
+/**
+ * Frames a newly chosen tank, then leaves the camera to the viewer.
+ *
+ * Placing the camera is a one-off per tank, not a property of the render: a
+ * viewer who has swung the view around expects it to stay where they left it
+ * while they stock the tank. Keying off the framing itself rather than the
+ * geometry object means an unrelated re-render cannot move the camera, however
+ * the scene above chose to derive its props.
+ */
 function CameraRig({ geometry }: { geometry: TankSceneGeometry }) {
   const camera = useThree(({ camera }) => camera)
+  const controls = useThree(({ controls }) => controls)
+  const [x, y, z] = geometry.camera.position
+  const { targetY } = geometry.camera
 
   useLayoutEffect(() => {
-    camera.position.set(...geometry.camera.position)
-    camera.lookAt(0, geometry.camera.targetY, 0)
-  }, [camera, geometry])
+    camera.position.set(x, y, z)
+    camera.lookAt(0, targetY, 0)
+
+    /**
+     * OrbitControls holds its own orbit around a target and writes the camera
+     * every frame, so moving the camera behind its back would be undone on the
+     * next one. Handing it the new target and letting it recompute keeps the two
+     * in agreement.
+     */
+    const orbit = controls as { target?: { set(x: number, y: number, z: number): void }; update?(): void } | null
+    orbit?.target?.set(0, targetY, 0)
+    orbit?.update?.()
+  }, [camera, controls, targetY, x, y, z])
 
   return null
 }
@@ -133,10 +155,15 @@ export function Aquarium({
         position={[-geometry.size.length * 0.5, geometry.fishCenterY, geometry.size.depth * 0.4]}
       />
 
+      {/*
+        makeDefault publishes the controls on the scene state, which is how the
+        rig above finds them when it needs to re-aim at a new tank.
+      */}
       <OrbitControls
         dampingFactor={0.08}
         enableDamping
         enablePan={false}
+        makeDefault
         maxDistance={geometry.camera.maxDistance}
         maxPolarAngle={Math.PI / 2 - 0.05}
         minDistance={geometry.camera.minDistance}

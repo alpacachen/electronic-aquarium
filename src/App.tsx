@@ -33,7 +33,16 @@ export function App({ frameloop = 'always' }: AppProps = {}) {
   const [tankId, setTankId] = useState<TankPresetId>(DEFAULT_TANK_ID)
   const [counts, setCounts] = useState(DEFAULT_STOCK)
   const preset = getTankPreset(tankId)
-  const geometry = getTankGeometry(preset)
+  /**
+   * Derived only when the tank changes. The scene reads the camera's framing out
+   * of this, so handing down a fresh object on every render would swing the view
+   * back to its default angle each time a viewer touched the fish market.
+   */
+  const geometry = useMemo(() => getTankGeometry(preset), [preset])
+  const camera = useMemo(
+    () => ({ fov: 42, position: geometry.camera.position }),
+    [geometry],
+  )
   const capacity = stockingCapacity(preset.volumeLiters)
 
   /**
@@ -86,8 +95,13 @@ export function App({ frameloop = 'always' }: AppProps = {}) {
 
   return (
     <main className="app-shell">
+      {/*
+        The camera options only place the camera on the first render; from then on
+        it belongs to the viewer and the rig inside the scene. They are derived
+        alongside the geometry so a re-render never hands Canvas a changed camera.
+      */}
       <Canvas
-        camera={{ position: geometry.camera.position, fov: 42 }}
+        camera={camera}
         dpr={[1, 1.5]}
         frameloop={frameloop}
         aria-label="3D 电子鱼缸，可拖动旋转视角并使用滚轮缩放"
