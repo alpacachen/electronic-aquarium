@@ -9,7 +9,15 @@ import {
 } from './aquarium/tankPresets'
 import type { TankPresetId } from './aquarium/tankPresets'
 
-export function App() {
+type AppProps = {
+  /**
+   * How the scene is driven. Defaults to a continuous loop; `never` hands the
+   * clock to the caller, which lets tests advance time on their own terms.
+   */
+  frameloop?: 'always' | 'never'
+}
+
+export function App({ frameloop = 'always' }: AppProps = {}) {
   const [tankId, setTankId] = useState<TankPresetId>(DEFAULT_TANK_ID)
   const preset = getTankPreset(tankId)
   const geometry = getTankGeometry(preset)
@@ -20,6 +28,7 @@ export function App() {
         key={preset.id}
         camera={{ position: geometry.camera.position, fov: 42 }}
         dpr={[1, 1.5]}
+        frameloop={frameloop}
         fallback={
           <div className="webgl-fallback">
             当前浏览器无法启用 WebGL，暂时无法显示电子鱼缸。
