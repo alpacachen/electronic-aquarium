@@ -11,6 +11,7 @@
 - 每条鱼守着自己的水层上下巡游，升降时抬头低头，游速有快有慢；同种鱼也不会齐步走。
 - 鱼市面板可以按鱼种增减，缸里养多少条由水体容量决定。
 - 鼠标拖动旋转视角，滚轮缩放。
+- 模型有几兆，下载完之前先显示一块加载幕布，而不是让观众对着空白页。
 - 小屏提供基础布局；当前不包含本地存储和后端，鱼群的增减不会跨刷新保留。
 
 接下来想做什么，记在 [GitHub Issues](https://github.com/alpacachen/electronic-aquarium/issues)。
@@ -75,4 +76,5 @@ WebGL 画布，几个文件一起抢同一个软件光栅化器时，单独都�
 - `src/aquarium/Fish.tsx`：把模拟状态映射到 3D 鱼对象。
 - `src/aquarium/FishMarket.tsx`：增减鱼的面板。
 - `src/aquarium/Aquarium.tsx`：鱼缸场景、灯光和相机控制。
+- `src/aquarium/loadingCurtain.ts`：等模型下载完再撤掉 `index.html` 里那块加载幕布。
 - `public/models/*/`：各鱼种的 GLB 模型及署名信息，见 `docs/fish-assets.md`。
