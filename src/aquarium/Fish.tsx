@@ -1,6 +1,7 @@
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { Component, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import type { ReactNode } from 'react'
 import { MeshStandardMaterial } from 'three'
 import { clone as cloneSkinnedModel } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import type { AnimationClip, Group, Mesh } from 'three'
@@ -18,6 +19,25 @@ type FishProps = {
 }
 
 const MAX_FRAME_DELTA = 0.05
+
+export class FishErrorBoundary extends Component<
+  { children: ReactNode; onError(): void },
+  { failed: boolean }
+> {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  componentDidCatch() {
+    this.props.onError()
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children
+  }
+}
 
 function startAtFirstKeyframe(source: AnimationClip) {
   const clip = source.clone()
