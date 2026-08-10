@@ -124,6 +124,31 @@ describe('挑选鱼缸尺寸', () => {
     }
   })
 
+  it('换到大缸后，鱼的水平游速按缸体比例放大', async () => {
+    // Given 让第一条鱼离开入场位置，再量一小段稳定的水平位移
+    aquarium.letTimePass(2)
+    const before = aquarium.fish()[0]!.position
+    aquarium.letTimePass(0.05)
+    const standardStep = aquarium.fish()[0]!.position
+    const horizontalDistance = (from: typeof before, to: typeof before) =>
+      Math.hypot(to.x - from.x, to.z - from.z)
+    const standardSpeed = horizontalDistance(before, standardStep)
+
+    // When 观众换成大型缸，再量同样的一帧
+    await aquarium.chooseTankSize('大型缸')
+    const largeBefore = aquarium.fish()[0]!.position
+    aquarium.letTimePass(0.05)
+    const largeStep = aquarium.fish()[0]!.position
+    const largeSpeed = horizontalDistance(largeBefore, largeStep)
+
+    // Then 大型缸的鱼按 fishScale（实测约 1.25 倍）放大水平游速；阈值留在 1.15，
+    // 仍能抓住速度状态没有迁移，却给边界转向留一点余量。
+    expect(
+      largeSpeed / standardSpeed,
+      `标准 ${standardSpeed}，大型 ${largeSpeed}`,
+    ).toBeGreaterThan(1.15)
+  })
+
   it('换到大缸时把镜头一起拉远', async () => {
     // Given 标准缸前的取景距离
     const standard = aquarium.camera().distance
