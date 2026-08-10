@@ -15,10 +15,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # No `version` here on purpose: package.json's `packageManager` field is the
+      # single source of truth. Specifying both makes the action fail on a version
+      # conflict before any test runs.
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
