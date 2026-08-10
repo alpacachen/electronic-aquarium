@@ -73,9 +73,18 @@ export type RenderedTank = Readonly<{
 /** The tail bone each species swings, whatever its rig chose to call it. */
 const TAIL_BONES = ['goldfish2Tail1_021', 'Tail']
 
-/** The 鱼市 tally line, e.g. 缸里 6 条 · 上限 8 条. */
+/** The 鱼市 panel, found by the name a screen reader would read out. */
+const marketPanel = () => document.querySelector('[aria-label="鱼市"]')
+
+/**
+ * The 鱼市 tally line, e.g. 缸里 6 条 · 上限 8 条.
+ *
+ * Read through the panel's live region rather than a class name: it is the same
+ * text a screen reader announces after a click, so this keeps working however the
+ * panel is styled.
+ */
 const marketTally = () =>
-  document.querySelector('.fish-market__total')?.textContent ?? ''
+  marketPanel()?.querySelector('[aria-live]')?.textContent ?? ''
 
 /** Finds a button by its accessible name, for checking whether it is disabled. */
 function nameButton(name: string) {
@@ -275,6 +284,25 @@ export async function openAquarium() {
   }
 
   /**
+   * Opens the tank-size dropdown and waits for its rows to be on screen.
+   *
+   * The list is a popup layer that Radix mounts on click and animates in, so a
+   * caller that read straight after the click would find an empty list.
+   */
+  const openSizePicker = async () => {
+    if (document.querySelector('[role="option"]')) return
+    await page.getByRole('combobox').click()
+    await vi.waitFor(
+      () => {
+        if (!document.querySelector('[role="option"]')) {
+          throw new Error('The tank-size dropdown has not opened yet.')
+        }
+      },
+      { interval: 10, timeout: 2000 },
+    )
+  }
+
+  /**
    * Drags the pointer across the canvas, the way a viewer swings the view.
    *
    * The grab starts on the left of the canvas rather than dead centre: the
@@ -315,8 +343,16 @@ export async function openAquarium() {
 
     capacity: () => page.getByRole('status'),
     heading: () => page.getByRole('heading', { level: 1 }),
-    sizePicker: () => page.getByRole('combobox'),
     text: (content: string | RegExp) => page.getByText(content),
+
+    /**
+     * The tank size the picker currently shows, e.g. 标准缸 · 60 × 30 × 36 cm.
+     *
+     * The picker is a button rather than a native `<select>`, so what a viewer
+     * reads is its label, not a form value.
+     */
+    chosenTankSize: () =>
+      document.querySelector('[role="combobox"]')?.textContent?.trim() ?? '',
 
     /** The 鱼市 panel, as a viewer meets it. */
     market: () => ({
@@ -345,30 +381,50 @@ export async function openAquarium() {
       canSell: (label: string) =>
         !nameButton(`少养一条${label}`)?.disabled,
 
-      /** The species the market offers, in the order they are listed. */
+      /**
+       * The species the market offers, in the order they are listed.
+       *
+       * Each row reads as e.g. 小丑鱼×2 — the name, then the count that is hidden
+       * from screen readers. Only the name is wanted here, so the count is
+       * dropped; the ± buttons carry icons rather than text and contribute none.
+       */
       offered: () =>
-        [...document.querySelectorAll('.fish-market__name')].map(
-          (name) => name.textContent ?? '',
+        [...(marketPanel()?.querySelectorAll('li') ?? [])].map((row) =>
+          (row.textContent ?? '').replace(/×\d+$/, ''),
         ),
 
       /** The tally line under the list, e.g. 缸里 6 条 · 上限 8 条. */
       tally: marketTally,
     }),
 
-    /** The sizes a viewer can pick from, as written in the dropdown. */
-    offeredTankSizes: () =>
-      [...document.querySelectorAll('option')].map((option) => option.textContent ?? ''),
+    /**
+     * The sizes a viewer can pick from, as written in the dropdown.
+     *
+     * The list only exists while the dropdown is open — it is a popup layer, not
+     * a set of `<option>` elements sitting in the page — so this opens it, reads
+     * the rows and closes it again, leaving the page as it was found.
+     */
+    offeredTankSizes: async () => {
+      await openSizePicker()
+      const offered = [...document.querySelectorAll('[role="option"]')].map(
+        (option) => option.textContent ?? '',
+      )
+      await userEvent.keyboard('{Escape}')
+      return offered
+    },
 
     /** Picks a tank by name, e.g. 迷你缸, and waits for the new scene. */
     chooseTankSize: async (name: string) => {
-      const option = [...document.querySelectorAll('option')].find((candidate) =>
+      await openSizePicker()
+
+      const option = [...document.querySelectorAll('[role="option"]')].find((candidate) =>
         candidate.textContent?.startsWith(name),
       )
       if (!option) {
         throw new Error(`The dropdown offers no tank called ${name}.`)
       }
 
-      await page.getByRole('combobox').selectOptions(option.textContent!)
+      await page.getByRole('option', { name: option.textContent! }).click()
       scene = await liveScene()
       elapsed = 0
       letTimePass(FRAME_SECONDS)

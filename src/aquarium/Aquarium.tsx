@@ -2,6 +2,7 @@ import { Edges, OrbitControls } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useLayoutEffect } from 'react'
 import { BackSide, DoubleSide } from 'three'
+import { PALETTE } from './palette'
 import { Fish } from './Fish'
 import { FISH_SPECIES } from './fishSpecies'
 import type { FishSeed } from './fishSimulation'
@@ -30,27 +31,27 @@ function Tank({ geometry }: { geometry: TankSceneGeometry }) {
     <group>
       <mesh castShadow receiveShadow position={[0, geometry.base.y, 0]}>
         <boxGeometry args={[geometry.base.length, geometry.base.height, geometry.base.depth]} />
-        <meshStandardMaterial color="#10191e" roughness={0.3} />
+        <meshStandardMaterial color={PALETTE.CABINET} roughness={0.3} />
       </mesh>
 
       <mesh position={[0, 0, 0]}>
         <boxGeometry args={[geometry.size.length, geometry.size.height, geometry.size.depth]} />
         <meshPhysicalMaterial
-          color="#bceeff"
+          color={PALETTE.PANE}
           depthWrite={false}
           opacity={0.14}
           roughness={0.05}
           side={BackSide}
           transparent
         />
-        <Edges color="#7bc5da" opacity={0.7} transparent />
+        <Edges color={PALETTE.PANE_EDGE} opacity={0.7} transparent />
       </mesh>
 
       <mesh position={[0, geometry.substrate.y, 0]} receiveShadow>
         <boxGeometry
           args={[geometry.substrate.length, geometry.substrate.height, geometry.substrate.depth]}
         />
-        <meshStandardMaterial color="#bfa67b" roughness={0.95} />
+        <meshStandardMaterial color={PALETTE.SUBSTRATE} roughness={0.95} />
       </mesh>
     </group>
   )
@@ -62,7 +63,7 @@ function Water({ geometry }: { geometry: TankSceneGeometry }) {
       <mesh position={[0, geometry.water.centerY, 0]}>
         <boxGeometry args={[geometry.water.length, geometry.water.height, geometry.water.depth]} />
         <meshBasicMaterial
-          color="#087f9e"
+          color={PALETTE.WATER}
           depthWrite={false}
           opacity={0.13}
           side={BackSide}
@@ -77,7 +78,7 @@ function Water({ geometry }: { geometry: TankSceneGeometry }) {
       >
         <planeGeometry args={[geometry.water.length, geometry.water.depth]} />
         <meshPhysicalMaterial
-          color="#57d4e8"
+          color={PALETTE.WATERLINE}
           depthWrite={false}
           ior={1.333}
           opacity={0.62}
@@ -133,11 +134,11 @@ export function Aquarium({
 }) {
   return (
     <>
-      <color attach="background" args={['#061823']} />
+      <color attach="background" args={[PALETTE.ABYSS]} />
       <fog
         attach="fog"
         args={[
-          '#061823',
+          PALETTE.ABYSS,
           Math.max(20, geometry.camera.maxDistance * 0.8),
           geometry.camera.maxDistance * 2.2,
         ]}
@@ -145,12 +146,12 @@ export function Aquarium({
       <ambientLight intensity={1.2} />
       <directionalLight
         castShadow
-        color="#d8f7ff"
+        color={PALETTE.SUNLIGHT}
         intensity={3.4}
         position={[geometry.size.length * 0.6, geometry.size.height * 1.7, geometry.size.depth * 1.6]}
       />
       <pointLight
-        color="#26bde2"
+        color={PALETTE.LAMP}
         intensity={22}
         position={[-geometry.size.length * 0.5, geometry.fishCenterY, geometry.size.depth * 0.4]}
       />
@@ -190,7 +191,7 @@ export function Aquarium({
 
       <mesh position={[0, geometry.floorY, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[Math.max(70, geometry.size.length * 4), Math.max(70, geometry.size.length * 4)]} />
-        <meshStandardMaterial color="#071219" roughness={0.92} />
+        <meshStandardMaterial color={PALETTE.FLOOR} roughness={0.92} />
       </mesh>
     </>
   )

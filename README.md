@@ -73,9 +73,31 @@ WebGL 画布，几个文件一起抢同一个软件光栅化器时，单独都�
 建一个已废弃的 `THREE.Clock`）由 `src/tests/quietDependencyWarnings.ts` 按整条
 消息滤掉，别的警告照旧打出来。要静音新的一条，往那份清单里加，并写清为什么我们改不动。
 
+## 样式
+
+界面用 Tailwind 写，面板上的控件来自 [shadcn/ui](https://ui.shadcn.com)（`Button`、
+`Select`），按它的方式复制进 `src/components/ui/`——那些文件是本仓库的代码，可以直接
+改，不要当成 node_modules 里的东西。
+
+颜色只在 `src/styles.css` 的 `@theme` 里定义一次，页面和缸里的水共用同一批值：缸侧那
+盏蓝灯就是加载条的蓝，缸的底色就是页面的底色。有三处读它，改颜色时三处都要跟上：
+
+- 面板和文字 —— Tailwind 由那些变量生成工具类（`bg-abyss`、`text-mist`……）。
+- 缸里的场景 —— Three.js 的材质拿不到 CSS 变量，由 `src/aquarium/palette.ts` 带一份
+  同名的字面值过去。
+- 加载幕布 —— 必须在第一帧就画出来，早于任何样式表，所以它在 `index.html` 里内联，
+  同样自带一份字面值。
+
+前两处本可以由构建期的代码生成打通，幕布那处绕不过去（它就是要早于 CSS）。所以这里
+选择靠约定同步，代价写在 `styles.css` 的注释里。
+
 ## 目录约定
 
 - `src/tests/`：所有测试，以及它们唯一的入口 `aquariumPage.tsx`。
+- `src/components/ui/`：shadcn/ui 复制进来的组件。
+- `src/lib/utils.ts`：shadcn 组件用的 `cn()`。
+- `src/aquarium/Panel.tsx`：浮在缸前面的那种毛玻璃面板。
+- `src/aquarium/palette.ts`：场景侧的颜色，对应 `styles.css` 里的 `@theme`。
 - `src/aquarium/fishSimulation.ts`：无渲染依赖的鱼运动规则。
 - `src/aquarium/fishSpecies.ts`：每个鱼种的模型、动画、比例和性子。
 - `src/aquarium/stocking.ts`：把鱼种和数量变成一缸各有差异的鱼，以及容量上限。

@@ -1,5 +1,8 @@
+import { MinusIcon, PlusIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { FISH_SPECIES } from './fishSpecies'
 import type { FishSpeciesId } from './fishSpecies'
+import { Panel, PanelHeading } from './Panel'
 
 const SPECIES = Object.keys(FISH_SPECIES) as FishSpeciesId[]
 
@@ -25,36 +28,48 @@ export function FishMarket({ capacity, counts, onAdd, onRemove }: FishMarketProp
   const full = total >= capacity
 
   return (
-    <section aria-label="鱼市" className="fish-market">
-      <h2>鱼市</h2>
+    <Panel aria-label="鱼市">
+      <PanelHeading className="mb-2.5">鱼市</PanelHeading>
 
-      <ul>
+      <ul className="grid list-none gap-1.5">
         {SPECIES.map((species) => {
           const { label } = FISH_SPECIES[species]
           const count = counts[species] ?? 0
 
           return (
-            <li key={species}>
-              <span className="fish-market__name">{label}</span>
-              <span aria-hidden="true" className="fish-market__count">
+            <li
+              key={species}
+              className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-1.5"
+            >
+              <span className="text-[0.86rem] tracking-[0.04em]">{label}</span>
+              <span
+                aria-hidden="true"
+                className="min-w-8 text-right text-[0.78rem] text-mist tabular-nums"
+              >
                 ×{count}
               </span>
-              <button
+              <Button
                 aria-label={`少养一条${label}`}
+                className="size-6.5 border-input bg-control text-ink hover:border-lagoon/70 hover:bg-control-hover hover:text-ink"
                 disabled={count === 0}
                 onClick={() => onRemove(species)}
+                size="icon-xs"
                 type="button"
+                variant="outline"
               >
-                −
-              </button>
-              <button
+                <MinusIcon />
+              </Button>
+              <Button
                 aria-label={`多养一条${label}`}
+                className="size-6.5 border-input bg-control text-ink hover:border-lagoon/70 hover:bg-control-hover hover:text-ink"
                 disabled={full}
                 onClick={() => onAdd(species)}
+                size="icon-xs"
                 type="button"
+                variant="outline"
               >
-                +
-              </button>
+                <PlusIcon />
+              </Button>
             </li>
           )
         })}
@@ -65,9 +80,9 @@ export function FishMarket({ capacity, counts, onAdd, onRemove }: FishMarketProp
         announces it, which is the only feedback a non-visual viewer gets that
         the click landed.
       */}
-      <p aria-live="polite" className="fish-market__total">
+      <p aria-live="polite" className="mt-3 text-[0.76rem] tracking-[0.06em] text-mist">
         缸里 {total} 条 · 上限 {capacity} 条{full ? ' · 已养满' : ''}
       </p>
-    </section>
+    </Panel>
   )
 }

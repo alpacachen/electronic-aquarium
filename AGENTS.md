@@ -25,6 +25,9 @@ gh issue comment 3 --body "…"  # 把进展记回去，别只留在对话里
 
 - 资源相关（新增鱼种、找模型、判许可）先读 [docs/fish-assets.md](docs/fish-assets.md)，
   里面有量朝向和缩放的方法，以及踩过的坑。
+- 样式用 Tailwind，控件用 shadcn/ui，颜色一律取 `src/styles.css` 里 `@theme` 定义的
+  那批，不要在组件里另写十六进制值。缸里的场景另有一份同名副本
+  （`src/aquarium/palette.ts`），改色的三个落点见 README 的样式一节。
 - 提交前跑 `pnpm check`（交互测试 + 类型检查 + 构建）。
 - 交互测试是串行跑的，见 README 的测试一节；别改成并行。
 

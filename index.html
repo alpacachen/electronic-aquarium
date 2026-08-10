@@ -10,6 +10,12 @@
       Inlined rather than left to styles.css, which is itself a request: the
       curtain has to be painted on the very first frame, or a viewer sees an
       unstyled flash of text before it.
+
+      Being inline is also why the colours are written out here rather than taken
+      from the theme: this block runs before any stylesheet, so there are no
+      custom properties to read yet. They are the same values src/styles.css
+      defines under `@theme` — abyss, shell, ink, lagoon, mist and lamp. That
+      file's comment lists all three places a colour has to be changed.
     -->
     <style>
       #loading-curtain {
