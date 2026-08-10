@@ -25,10 +25,11 @@ export function App({ frameloop = 'always' }: AppProps = {}) {
   return (
     <main className="app-shell">
       <Canvas
-        key={preset.id}
         camera={{ position: geometry.camera.position, fov: 42 }}
         dpr={[1, 1.5]}
         frameloop={frameloop}
+        aria-label="3D 电子鱼缸，可拖动旋转视角并使用滚轮缩放"
+        aria-describedby="control-hint"
         fallback={
           <div className="webgl-fallback">
             当前浏览器无法启用 WebGL，暂时无法显示电子鱼缸。
@@ -62,7 +63,7 @@ export function App({ frameloop = 'always' }: AppProps = {}) {
         <output>约 {preset.volumeLiters} L</output>
       </section>
 
-      <div className="control-hint" aria-label="相机操作提示">
+      <div id="control-hint" className="control-hint" aria-label="相机操作提示">
         拖动旋转&nbsp;&nbsp;·&nbsp;&nbsp;滚轮缩放
       </div>
     </main>

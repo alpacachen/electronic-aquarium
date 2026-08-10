@@ -1,4 +1,6 @@
 import { Edges, OrbitControls } from '@react-three/drei'
+import { useThree } from '@react-three/fiber'
+import { useLayoutEffect } from 'react'
 import { BackSide, DoubleSide } from 'three'
 import { Fish } from './Fish'
 import type { FishState } from './fishSimulation'
@@ -126,6 +128,17 @@ function Water({ geometry }: { geometry: TankSceneGeometry }) {
   )
 }
 
+function CameraRig({ geometry }: { geometry: TankSceneGeometry }) {
+  const camera = useThree(({ camera }) => camera)
+
+  useLayoutEffect(() => {
+    camera.position.set(...geometry.camera.position)
+    camera.lookAt(0, geometry.camera.targetY, 0)
+  }, [camera, geometry])
+
+  return null
+}
+
 export function Aquarium({ geometry }: { geometry: TankSceneGeometry }) {
   return (
     <>
@@ -161,6 +174,7 @@ export function Aquarium({ geometry }: { geometry: TankSceneGeometry }) {
         minPolarAngle={0.18}
         target={[0, geometry.camera.targetY, 0]}
       />
+      <CameraRig geometry={geometry} />
 
       <Tank geometry={geometry} />
       <Water geometry={geometry} />

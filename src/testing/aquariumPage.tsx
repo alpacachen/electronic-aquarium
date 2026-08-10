@@ -94,16 +94,13 @@ export type AquariumPage = Awaited<ReturnType<typeof openAquarium>>
 export async function openAquarium() {
   render(<App frameloop="never" />)
 
-  /**
-   * Choosing another tank size remounts the canvas, so the scene is looked up
-   * again rather than captured once.
-   */
-  const liveScene = async (retiring?: WebGLRenderer) => {
+  /** Finds the live renderer without coupling tests to how the canvas is mounted. */
+  const liveScene = async () => {
     const found = await vi.waitFor(
       () => {
         const canvas = document.querySelector('canvas')
         const state = canvas ? _roots.get(canvas)?.store.getState() : undefined
-        if (!state || state.scene.children.length === 0 || state.gl === retiring) {
+        if (!state || state.scene.children.length === 0) {
           throw new Error('The aquarium scene has not been rendered yet.')
         }
         return state
@@ -111,7 +108,6 @@ export async function openAquarium() {
       { interval: 50, timeout: 5000 },
     )
 
-    if (retiring) release(retiring)
     openRenderers.add(found.gl)
     found.clock.elapsedTime = 0
     return found
@@ -198,9 +194,8 @@ export async function openAquarium() {
         throw new Error(`The dropdown offers no tank called ${name}.`)
       }
 
-      const retiring = scene.gl
       await page.getByRole('combobox').selectOptions(option.textContent!)
-      scene = await liveScene(retiring)
+      scene = await liveScene()
       elapsed = 0
       letTimePass(FRAME_SECONDS)
     },

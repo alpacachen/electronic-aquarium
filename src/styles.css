@@ -131,3 +131,36 @@ body {
   backdrop-filter: blur(10px);
   z-index: 1;
 }
+
+@media (max-width: 720px) {
+  body {
+    min-width: 0;
+  }
+
+  .title-card {
+    top: 24px;
+    left: 24px;
+  }
+
+  .title-card h1 {
+    font-size: clamp(2rem, 12vw, 3.4rem);
+  }
+
+  .title-card p {
+    max-width: 14rem;
+    font-size: 0.8rem;
+  }
+
+  .tank-selector {
+    right: 16px;
+    bottom: 64px;
+    left: 16px;
+    top: auto;
+    width: auto;
+  }
+
+  .control-hint {
+    right: 16px;
+    bottom: 16px;
+  }
+}
