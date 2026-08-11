@@ -10,38 +10,32 @@ describe('挪动镜头', () => {
     aquarium = await openAquarium()
   })
 
-  it('把操作方式写在角落里', async () => {
+  it('把操作方式写在角落里，拖动能绕着鱼缸转、能俯仰，但翻不到缸底以下', async () => {
     // When 观众四下打量页面
     // Then 角落里提示可以拖动和滚轮
     await expect.element(aquarium.text(/拖动旋转/)).toBeVisible()
     await expect.element(aquarium.text(/滚轮缩放/)).toBeVisible()
-  })
 
-  it('横向拖动让镜头绕着鱼缸转', async () => {
     // Given 镜头此刻的位置和它离鱼缸的距离
-    const before = aquarium.camera()
+    const beforeDragAcross = aquarium.camera()
 
     // When 观众按住画面往左拖
     await aquarium.dragAcross(-260)
 
     // Then 镜头绕到了另一侧，但仍保持一样远
-    const after = aquarium.camera()
-    expect(after.position.x).not.toBeCloseTo(before.position.x, 1)
-    expect(after.distance).toBeCloseTo(before.distance, 1)
-  })
+    const afterDragAcross = aquarium.camera()
+    expect(afterDragAcross.position.x).not.toBeCloseTo(beforeDragAcross.position.x, 1)
+    expect(afterDragAcross.distance).toBeCloseTo(beforeDragAcross.distance, 1)
 
-  it('纵向拖动让镜头俯仰', async () => {
     // Given 镜头此刻的高度
-    const before = aquarium.camera().height
+    const beforeDragDown = aquarium.camera().height
 
     // When 观众往下拖动画面
     await aquarium.dragDownwards(300)
 
     // Then 视角抬高了，改成俯视鱼缸
-    expect(aquarium.camera().height).toBeGreaterThan(before)
-  })
+    expect(aquarium.camera().height).toBeGreaterThan(beforeDragDown)
 
-  it('不让观众把镜头翻到缸底以下', async () => {
     // When 观众一路往上拖，想钻到鱼缸下面去看
     for (let pull = 0; pull < 8; pull += 1) {
       await aquarium.dragDownwards(-400)
@@ -51,7 +45,7 @@ describe('挪动镜头', () => {
     expect(aquarium.camera().height).toBeGreaterThan(0)
   })
 
-  it('滚轮可以把鱼缸拉近或推远', async () => {
+  it('滚轮能把鱼缸拉近或推远，但两头都收在可视范围内', async () => {
     // Given 镜头此刻离鱼缸的距离
     const before = aquarium.camera().distance
 
@@ -67,9 +61,7 @@ describe('挪动镜头', () => {
 
     // Then 镜头退得更远了
     expect(aquarium.camera().distance).toBeGreaterThan(closer)
-  })
 
-  it('镜头无论拉近还是推远都保持在可视范围内', async () => {
     // When 观众一路把滚轮往前推到底
     for (let push = 0; push < 12; push += 1) {
       await aquarium.scrollWheel(-1200, false)
@@ -98,7 +90,7 @@ describe('挪动镜头', () => {
    */
   const settleCamera = () => aquarium.letTimePass(6)
 
-  it('鱼市增减鱼不会把视角拨回去', async () => {
+  it('鱼市增减鱼不会把视角拨回去，转过镜头之后鱼也照旧游动', async () => {
     // Given 观众把镜头转到一个自己中意的角度，并且惯性已经停下
     await aquarium.dragAcross(-220)
     await aquarium.dragDownwards(120)
@@ -116,19 +108,12 @@ describe('挪动镜头', () => {
     expect(now.position.x).toBeCloseTo(chosen.position.x, 2)
     expect(now.position.y).toBeCloseTo(chosen.position.y, 2)
     expect(now.position.z).toBeCloseTo(chosen.position.z, 2)
-  })
 
-  it('转过镜头之后鱼照旧游动', async () => {
-    // Given 观众换了个角度看缸
-    await aquarium.dragAcross(200)
-    const before = aquarium.fish().map(({ position }) => position)
-
-    // When 过去两秒
+    // 而且鱼群没有因为镜头动过而停下
+    const beforeSwim = aquarium.fish().map(({ position }) => position)
     aquarium.letTimePass(2)
-
-    // Then 鱼群没有因为镜头动过而停下
     aquarium.fish().forEach(({ position }, index) => {
-      expect(position).not.toEqual(before[index])
+      expect(position).not.toEqual(beforeSwim[index])
     })
   })
 })
