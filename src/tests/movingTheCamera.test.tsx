@@ -51,7 +51,7 @@ describe('挪动镜头', () => {
     expect(aquarium.camera().height).toBeGreaterThan(0)
   })
 
-  it('往前滚滚轮把鱼缸拉近', async () => {
+  it('滚轮可以把鱼缸拉近或推远', async () => {
     // Given 镜头此刻离鱼缸的距离
     const before = aquarium.camera().distance
 
@@ -59,39 +59,32 @@ describe('挪动镜头', () => {
     await aquarium.scrollWheel(-600)
 
     // Then 镜头靠得更近了
-    expect(aquarium.camera().distance).toBeLessThan(before)
-  })
-
-  it('往后滚滚轮把鱼缸推远', async () => {
-    // Given 镜头此刻离鱼缸的距离
-    const before = aquarium.camera().distance
+    const closer = aquarium.camera().distance
+    expect(closer).toBeLessThan(before)
 
     // When 观众向后滚动滚轮
     await aquarium.scrollWheel(600)
 
     // Then 镜头退得更远了
-    expect(aquarium.camera().distance).toBeGreaterThan(before)
+    expect(aquarium.camera().distance).toBeGreaterThan(closer)
   })
 
-  it('再怎么拉近也不会穿进玻璃里', async () => {
+  it('镜头无论拉近还是推远都保持在可视范围内', async () => {
     // When 观众一路把滚轮往前推到底
     for (let push = 0; push < 12; push += 1) {
-      await aquarium.scrollWheel(-1200)
+      await aquarium.scrollWheel(-1200, false)
     }
 
     // Then 镜头停在缸外，没有钻进水里
     const tank = aquarium.tank()
     expect(aquarium.camera().distance).toBeGreaterThan(tank.length / 2)
-  })
 
-  it('再怎么推远也不会把鱼缸丢出画面', async () => {
     // When 观众一路把滚轮往后拉到底
     for (let pull = 0; pull < 12; pull += 1) {
-      await aquarium.scrollWheel(1200)
+      await aquarium.scrollWheel(1200, false)
     }
 
     // Then 镜头收在一个还能看清鱼缸的距离上
-    const tank = aquarium.tank()
     expect(aquarium.camera().distance).toBeLessThan(tank.length * 6)
   })
 
@@ -105,7 +98,7 @@ describe('挪动镜头', () => {
    */
   const settleCamera = () => aquarium.letTimePass(6)
 
-  it('在鱼市里加一条鱼，不会把视角拨回去', async () => {
+  it('鱼市增减鱼不会把视角拨回去', async () => {
     // Given 观众把镜头转到一个自己中意的角度，并且惯性已经停下
     await aquarium.dragAcross(-220)
     await aquarium.dragDownwards(120)
@@ -114,45 +107,14 @@ describe('挪动镜头', () => {
 
     // When 观众去鱼市添了一条鱼
     await aquarium.market().buy('小丑鱼')
-
-    // Then 镜头还在观众留下它的地方
-    const now = aquarium.camera()
-    expect(now.position.x).toBeCloseTo(chosen.position.x, 2)
-    expect(now.position.y).toBeCloseTo(chosen.position.y, 2)
-    expect(now.position.z).toBeCloseTo(chosen.position.z, 2)
-  })
-
-  it('从鱼市捞走一条鱼，也不会把视角拨回去', async () => {
-    // Given 观众把镜头转开，等它停稳
-    await aquarium.dragAcross(200)
-    settleCamera()
-    const chosen = aquarium.camera()
-
-    // When 观众捞走一条金鱼
-    await aquarium.market().sell('金鱼')
-
-    // Then 镜头没有动
-    const now = aquarium.camera()
-    expect(now.position.x).toBeCloseTo(chosen.position.x, 2)
-    expect(now.position.y).toBeCloseTo(chosen.position.y, 2)
-    expect(now.position.z).toBeCloseTo(chosen.position.z, 2)
-  })
-
-  it('反复增减鱼，视角始终待在观众放的位置', async () => {
-    // Given 观众摆好了角度，等它停稳
-    await aquarium.dragAcross(-160)
-    settleCamera()
-    const chosen = aquarium.camera()
-
-    // When 观众在鱼市里来回折腾
-    await aquarium.market().buy('小丑鱼')
     await aquarium.market().sell('金鱼')
     await aquarium.market().buy('金枪鱼')
 
-    // Then 镜头一次都没有被拨回去
+    // Then 镜头还在观众留下它的地方
     const now = aquarium.camera()
     expect(now.distance).toBeCloseTo(chosen.distance, 2)
     expect(now.position.x).toBeCloseTo(chosen.position.x, 2)
+    expect(now.position.y).toBeCloseTo(chosen.position.y, 2)
     expect(now.position.z).toBeCloseTo(chosen.position.z, 2)
   })
 

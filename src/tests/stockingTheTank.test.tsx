@@ -68,7 +68,7 @@ describe('逛鱼市', () => {
     // When 过去十秒
     const seen = before.map(({ position }) => ({ maxY: position.y, minY: position.y }))
     for (let second = 0; second < 10; second += 1) {
-      aquarium.letTimePass(1)
+      aquarium.letTimePass(1, false)
       aquarium.fish().forEach(({ position }, index) => {
         seen[index]!.maxY = Math.max(seen[index]!.maxY, position.y)
         seen[index]!.minY = Math.min(seen[index]!.minY, position.y)
@@ -194,7 +194,7 @@ describe('逛鱼市', () => {
 
     const trail: number[][] = [school.map(({ position }) => position.y)]
     for (let second = 0; second < 30; second += 1) {
-      aquarium.letTimePass(1)
+      aquarium.letTimePass(1, false)
       trail.push(aquarium.fish().map(({ position }) => position.y))
     }
 
@@ -217,7 +217,7 @@ describe('逛鱼市', () => {
       aquarium.fish().map(({ position, species }) => [species, position]),
     )
     for (let second = 0; second < 30; second += 1) {
-      aquarium.letTimePass(1)
+      aquarium.letTimePass(1, false)
       aquarium.fish().forEach(({ position, species }) => {
         const was = previous.get(species)
         if (!was) return

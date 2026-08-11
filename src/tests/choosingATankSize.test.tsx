@@ -31,7 +31,7 @@ describe('挑选鱼缸尺寸', () => {
     await expect.element(aquarium.capacity()).toHaveTextContent('约 64.8 L')
   })
 
-  it('换成更大的缸，水体也跟着变大', async () => {
+  it('换缸时水体和容量会跟着变大或变小', async () => {
     // Given 观众记住了标准缸的样子
     const standard = aquarium.tank()
 
@@ -44,11 +44,6 @@ describe('挑选鱼缸尺寸', () => {
     expect(extraLarge.depth).toBeGreaterThan(standard.depth)
     expect(extraLarge.height).toBeGreaterThan(standard.height)
     await expect.element(aquarium.capacity()).toHaveTextContent('约 300 L')
-  })
-
-  it('换成迷你缸，水体也跟着变小', async () => {
-    // Given 观众记住了标准缸的样子
-    const standard = aquarium.tank()
 
     // When 观众换成迷你缸
     await aquarium.chooseTankSize('迷你缸')
@@ -88,7 +83,7 @@ describe('挑选鱼缸尺寸', () => {
     // When 观众换成迷你缸
     await aquarium.chooseTankSize('迷你缸')
 
-    // Then 留下来的鱼变小了，以配得上这只更小的缸
+    // Then 鱼跟着缩小，以配得上这只更小的缸
     expect(aquarium.fish()[0]!.scale).toBeLessThan(inStandard)
   })
 
@@ -113,7 +108,7 @@ describe('挑选鱼缸尺寸', () => {
 
     // When 观众在小缸前看了半分钟
     for (let second = 0; second < 30; second += 1) {
-      aquarium.letTimePass(1)
+      aquarium.letTimePass(1, false)
 
       // Then 鱼始终待在这只更小的缸里
       aquarium.fish().forEach(({ position }) => {

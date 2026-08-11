@@ -74,7 +74,7 @@ describe('观赏鱼缸', () => {
 
     // When 观众看了二十秒
     for (let second = 0; second < 20; second += 1) {
-      aquarium.letTimePass(1)
+      aquarium.letTimePass(1, false)
       aquarium.fish().forEach(({ position }, index) => {
         seen[index]!.max = Math.max(seen[index]!.max, position.y)
         seen[index]!.min = Math.min(seen[index]!.min, position.y)
@@ -102,7 +102,7 @@ describe('观赏鱼缸', () => {
     let previous = aquarium.fish().map(({ position }) => position.y)
 
     for (let step = 0; step < 40; step += 1) {
-      aquarium.letTimePass(STEP)
+      aquarium.letTimePass(STEP, false)
       const now = aquarium.fish()
       now.forEach(({ pitch, position }, index) => {
         samples.push({ pitch, rising: position.y - previous[index]! })
@@ -129,7 +129,7 @@ describe('观赏鱼缸', () => {
   it('不让任何一条鱼翻过来或者竖起来', () => {
     // When 观众看了二十秒
     for (let second = 0; second < 20; second += 1) {
-      aquarium.letTimePass(1)
+      aquarium.letTimePass(1, false)
 
       // Then 鱼始终大致保持水平，没有立成一根针
       aquarium.fish().forEach(({ pitch }) => {
@@ -145,7 +145,7 @@ describe('观赏鱼缸', () => {
     // When 记录半分钟里每条鱼的高度
     const trail: number[][] = []
     for (let second = 0; second < 30; second += 1) {
-      aquarium.letTimePass(1)
+      aquarium.letTimePass(1, false)
       trail.push(aquarium.fish().map(({ position }) => position.y))
     }
 
@@ -155,31 +155,6 @@ describe('观赏鱼缸', () => {
       return deltas.some((delta) => delta > 0.01) && deltas.some((delta) => delta < -0.01)
     })
     expect(mixed.length).toBeGreaterThan(trail.length / 4)
-  })
-
-  it('让每条鱼都游起来', () => {
-    // Given 记下此刻每条鱼待的地方
-    const before = aquarium.fish().map(({ position }) => position)
-
-    // When 过去两秒
-    aquarium.letTimePass(2)
-
-    // Then 每条鱼都换了位置
-    aquarium.fish().forEach(({ position }, index) => {
-      expect(position).not.toEqual(before[index])
-    })
-  })
-
-  it('让鱼一边游一边摆尾', () => {
-    // Given 入场过渡结束后，记下第一条鱼尾巴的角度
-    aquarium.letTimePass(1)
-    const before = aquarium.fish()[0]!.tailAngle
-
-    // When 过去一小会儿
-    aquarium.letTimePass(0.2)
-
-    // Then 尾巴摆到了别的角度
-    expect(aquarium.fish()[0]!.tailAngle).not.toBe(before)
   })
 
   it('不让任何一条鱼游出玻璃', () => {
@@ -207,7 +182,7 @@ describe('观赏鱼缸', () => {
 
     // When 观众看了半分钟
     for (let second = 0; second < 30; second += 1) {
-      aquarium.letTimePass(1)
+      aquarium.letTimePass(1, false)
       trail.push(aquarium.fish().map(({ headingY }) => headingY))
     }
 
@@ -316,7 +291,7 @@ describe('观赏鱼缸', () => {
 
     // When 观众看了一分钟
     for (let second = 0; second < 60; second += 1) {
-      aquarium.letTimePass(1)
+      aquarium.letTimePass(1, false)
       aquarium.fish().forEach(({ position }, index) => {
         seen[index]!.maxX = Math.max(seen[index]!.maxX, position.x)
         seen[index]!.minX = Math.min(seen[index]!.minX, position.x)

@@ -405,11 +405,11 @@ export async function openAquarium({
   /**
    * Runs the render loop for a stretch of aquarium time, in seconds.
    *
-   * Only the last frame is drawn. Every frame still runs the animation, but
-   * repainting each one would spend seconds in the software rasteriser without
-   * changing what the final frame looks like.
+   * By default only the last frame is drawn. Long sampling loops can turn that
+   * last draw off too: scene state still advances, while the software rasteriser
+   * has nothing useful to paint between assertions.
    */
-  const letTimePass = (seconds = 1) => {
+  const letTimePass = (seconds = 1, draw = true) => {
     const frames = Math.max(1, Math.round(seconds / FRAME_SECONDS))
     for (let frame = 0; frame < frames - 1; frame += 1) {
       elapsed += FRAME_SECONDS
@@ -417,7 +417,7 @@ export async function openAquarium({
     }
 
     elapsed += FRAME_SECONDS
-    live().advance(elapsed)
+    live().advance(elapsed, draw)
   }
 
   /**
@@ -728,7 +728,7 @@ export async function openAquarium({
      * a wheel event unless it is idle, so a drag left mid-gesture by an earlier
      * step would otherwise swallow the scroll.
      */
-    scrollWheel: async (deltaY: number) => {
+    scrollWheel: async (deltaY: number, draw = true) => {
       const canvas = document.querySelector('canvas')!
       const at = { x: canvas.clientWidth * 0.28, y: canvas.clientHeight / 2 }
 
@@ -740,7 +740,7 @@ export async function openAquarium({
         clientY: at.y,
         deltaY,
       }))
-      letTimePass(0.5)
+      letTimePass(0.5, draw)
     },
 
     eachFrame,

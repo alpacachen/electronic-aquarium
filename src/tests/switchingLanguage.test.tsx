@@ -9,7 +9,7 @@ import { openAquarium } from './aquariumPage'
  * 都自己开缸，开局条件本身就是被测的东西。
  */
 describe('中英文切换', () => {
-  it('切到英文，面板上的字跟着换', async () => {
+  it('中英文往返时界面文案跟着换', async () => {
     // Given 观众打开的是中文界面
     const aquarium = await openAquarium()
     expect(aquarium.isLanguageChosen('zh')).toBe(true)
@@ -48,12 +48,6 @@ describe('中英文切换', () => {
     // 而且那颗按钮标出了当前用的就是英文
     expect(aquarium.isLanguageChosen('en')).toBe(true)
     expect(aquarium.isLanguageChosen('zh')).toBe(false)
-  })
-
-  it('切回中文，字也跟着回来', async () => {
-    // Given 观众先切到了英文
-    const aquarium = await openAquarium()
-    await aquarium.chooseLanguage('en')
 
     // When 观众又点了中文
     await aquarium.chooseLanguage('zh')
