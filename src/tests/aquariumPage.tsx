@@ -46,7 +46,12 @@ let releaseStalledModels: (() => void) | undefined
 
 function release(renderer: WebGLRenderer) {
   openRenderers.delete(renderer)
-  renderer.forceContextLoss()
+  /**
+   * `forceContextLoss()` 用来实测要 3.5s（SwiftShader 拆一个已经编译过 program
+   * 的 context 很慢），而 `dispose()` 已经释放了几何、材质、渲染目标这些资源。
+   * 只调 `dispose()`：如果浏览器的 context 上限真的被顶到，表现会是后面某条
+   * 用例创建 context 失败，而不是这条本身变慢。
+   */
   renderer.dispose()
 }
 
@@ -402,6 +407,17 @@ export async function openAquarium({
     return found
   }
 
+  const lampLight = () => {
+    let found: Object3D | undefined
+    live().scene.traverse((object) => {
+      if (object.userData.aquariumLampLight === true) found = object
+    })
+    if (!found || !('intensity' in found) || !('color' in found)) {
+      throw new Error('The aquarium has no controllable lamp.')
+    }
+    return found as Object3D & { intensity: number; color: { getHexString(): string } }
+  }
+
   /**
    * Runs the render loop for a stretch of aquarium time, in seconds.
    *
@@ -506,6 +522,12 @@ export async function openAquarium({
       distance: live().camera.position.length(),
       height: live().camera.position.y,
       position: live().camera.position.clone(),
+    }),
+
+    lamp: () => ({
+      intensity: () => lampLight().intensity,
+      color: () => lampLight().color.getHexString(),
+      position: () => lampLight().getWorldPosition(new Vector3()),
     }),
 
     waterSurface: () => {
