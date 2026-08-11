@@ -3,7 +3,7 @@
  *
  * 这份文件是 src/styles.css 里 `@theme` 那批变量在 JS 侧的副本：Three.js 的材质
  * 收到的是颜色字面值，读不到 CSS 变量，所以场景侧只能另存一份。名字和那边一一对应
- * （`--color-lamp` 就是 `LAMP`），改色时两边一起改。
+ * （`--color-lamp` 就是 `LAMP`），`pnpm check:colors` 会阻止两边漂移。
  *
  * 为什么不干脆运行时从 `getComputedStyle(document.documentElement)` 把变量读过来：
  * 那样能省掉这份副本，但会让场景的颜色取决于样式表有没有到位——测试里画布挂载得

@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "pnpm check:colors && tsc --noEmit && vite build",
+    "check:colors": "node scripts/check-colors.mjs",
     "check": "pnpm test && pnpm build",
     "test": "vitest run --config vite.config.ts --reporter=default --reporter=verbose",
     "test:watch": "vitest --config vite.config.ts"
