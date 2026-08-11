@@ -13,7 +13,7 @@ export function Panel({ className, ...props }: ComponentProps<'section'>) {
   return (
     <section
       className={cn(
-        'rounded-xl border border-glass/24 bg-surface/72 px-4 py-3.5 backdrop-blur-md',
+        'rounded-xl border border-glass/24 bg-surface/72 px-4 py-3.5 backdrop-blur-md max-[720px]:rounded-none max-[720px]:border-0 max-[720px]:bg-transparent max-[720px]:px-1 max-[720px]:backdrop-blur-none',
         className,
       )}
       {...props}

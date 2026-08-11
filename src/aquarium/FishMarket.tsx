@@ -55,7 +55,7 @@ export function FishMarket({ capacity, counts, onAdd, onRemove }: FishMarketProp
               </span>
               <Button
                 aria-label={t('market.removeOne', { label })}
-                className="size-6.5 border-input bg-control text-ink hover:border-lagoon/70 hover:bg-control-hover hover:text-ink"
+                className="size-6.5 border-input bg-control text-ink hover:border-lagoon/70 hover:bg-control-hover hover:text-ink max-[720px]:size-11"
                 disabled={count === 0}
                 onClick={() => onRemove(species)}
                 type="button"
@@ -64,7 +64,7 @@ export function FishMarket({ capacity, counts, onAdd, onRemove }: FishMarketProp
               </Button>
               <Button
                 aria-label={t('market.addOne', { label })}
-                className="size-6.5 border-input bg-control text-ink hover:border-lagoon/70 hover:bg-control-hover hover:text-ink"
+                className="size-6.5 border-input bg-control text-ink hover:border-lagoon/70 hover:bg-control-hover hover:text-ink max-[720px]:size-11"
                 disabled={full}
                 onClick={() => onAdd(species)}
                 type="button"

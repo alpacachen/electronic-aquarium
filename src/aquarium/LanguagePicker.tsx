@@ -29,8 +29,8 @@ export function LanguagePicker() {
             aria-pressed={chosen}
             className={
               chosen
-                ? 'size-auto rounded-full border-transparent bg-lagoon px-3 py-1 text-[0.76rem] tracking-[0.08em] text-abyss hover:bg-lagoon hover:text-abyss'
-                : 'size-auto rounded-full border-transparent bg-transparent px-3 py-1 text-[0.76rem] tracking-[0.08em] text-mist shadow-none hover:bg-control-hover hover:text-ink'
+                ? 'size-auto rounded-full border-transparent bg-lagoon px-3 py-1 text-[0.76rem] tracking-[0.08em] text-abyss hover:bg-lagoon hover:text-abyss max-[720px]:min-h-11'
+                : 'size-auto rounded-full border-transparent bg-transparent px-3 py-1 text-[0.76rem] tracking-[0.08em] text-mist shadow-none hover:bg-control-hover hover:text-ink max-[720px]:min-h-11'
             }
             key={language}
             onClick={() => void i18n.changeLanguage(language)}

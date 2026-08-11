@@ -29,7 +29,8 @@
     "react-i18next": "17.0.11",
     "tailwind-merge": "3.6.0",
     "tailwindcss": "4.3.3",
-    "three": "^0.185.1"
+    "three": "^0.185.1",
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",
