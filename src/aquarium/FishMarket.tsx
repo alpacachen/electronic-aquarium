@@ -53,9 +53,7 @@ export function FishMarket({ capacity, counts, onAdd, onRemove }: FishMarketProp
                 className="size-6.5 border-input bg-control text-ink hover:border-lagoon/70 hover:bg-control-hover hover:text-ink"
                 disabled={count === 0}
                 onClick={() => onRemove(species)}
-                size="icon-xs"
                 type="button"
-                variant="outline"
               >
                 <MinusIcon />
               </Button>
@@ -64,9 +62,7 @@ export function FishMarket({ capacity, counts, onAdd, onRemove }: FishMarketProp
                 className="size-6.5 border-input bg-control text-ink hover:border-lagoon/70 hover:bg-control-hover hover:text-ink"
                 disabled={full}
                 onClick={() => onAdd(species)}
-                size="icon-xs"
                 type="button"
-                variant="outline"
               >
                 <PlusIcon />
               </Button>
