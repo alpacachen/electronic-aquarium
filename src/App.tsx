@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
+import { SlidersHorizontalIcon, XIcon } from 'lucide-react'
 import { I18nextProvider, useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer'
 import {
   Select,
   SelectContent,
@@ -83,6 +93,7 @@ function AquariumView({ frameloop, modelUrls }: Omit<AppProps, 'i18n'>) {
   const language = languageOf(i18n)
   const [tankId, setTankId] = useState<TankPresetId>(DEFAULT_TANK_ID)
   const [counts, setCounts] = useState(DEFAULT_STOCK)
+  const [controlsOpen, setControlsOpen] = useState(false)
   const [failedSpecies, setFailedSpecies] = useState<ReadonlySet<FishSpeciesId>>(new Set())
   const [webglAvailable] = useState(canUseWebGL)
   const preset = getTankPreset(tankId)
@@ -163,7 +174,7 @@ function AquariumView({ frameloop, modelUrls }: Omit<AppProps, 'i18n'>) {
   }
 
   return (
-    <main className="relative h-full w-full bg-abyss bg-[radial-gradient(circle_at_50%_30%,--alpha(var(--color-shell)/45%),transparent_44%)]">
+    <main className="relative h-dvh w-full bg-abyss bg-[radial-gradient(circle_at_50%_30%,--alpha(var(--color-shell)/45%),transparent_44%)]">
       {/*
         没有 WebGL 就不挂幕布：那种情况下一个模型都不会去下，幕布等不到「加载完」，
         只能挨到超时才走——白白压在降级提示上面十几秒。
@@ -210,11 +221,11 @@ function AquariumView({ frameloop, modelUrls }: Omit<AppProps, 'i18n'>) {
         </div>
       )}
 
-      <header className="pointer-events-none absolute top-10 left-12 z-10 [text-shadow:0_2px_24px_--alpha(var(--color-abyss)/70%)] max-[720px]:top-6 max-[720px]:left-6">
+      <header className="pointer-events-none absolute top-10 left-12 z-10 [text-shadow:0_2px_24px_--alpha(var(--color-abyss)/70%)] max-[720px]:top-6 max-[720px]:left-6 max-[720px]:max-w-[calc(100%-3rem)]">
         <span className="text-[0.7rem] font-bold tracking-[0.24em] text-lagoon">
           PHASE 01
         </span>
-        <h1 className="mt-[0.45rem] text-[clamp(2.2rem,4vw,4.6rem)] font-[520] tracking-[-0.055em] max-[720px]:text-[clamp(2rem,12vw,3.4rem)]">
+        <h1 className="mt-[0.45rem] text-[clamp(2.2rem,4vw,4.6rem)] leading-none font-[520] tracking-[-0.055em] max-[720px]:text-[clamp(1.9rem,9vw,3rem)]">
           {t('heading')}
         </h1>
         <p className="mt-[0.55rem] text-[0.95rem] tracking-[0.08em] text-mist max-[720px]:max-w-56 max-[720px]:text-[0.8rem]">
@@ -222,61 +233,62 @@ function AquariumView({ frameloop, modelUrls }: Omit<AppProps, 'i18n'>) {
         </p>
       </header>
 
-      {/*
-        The two right-hand panels share a column so they can never overlap each
-        other, however tall the market's list grows.
-
-        The column is only a layout box; the gap between its two panels sits over
-        the tank, and a viewer dragging there means to swing the camera. Each
-        panel takes its own events back with pointer-events-auto.
-
-        It stays a column on the right even on a narrow screen. Stretching it
-        across the full width would leave nowhere to grab the tank, since a drag
-        anywhere under the panels swings nothing.
-      */}
-      <div className="pointer-events-none absolute top-10 right-12 z-10 grid max-h-[calc(100%-130px)] w-[290px] content-start gap-3.5 [&>*]:pointer-events-auto max-[720px]:top-6 max-[720px]:right-4 max-[720px]:max-h-[calc(100%-150px)] max-[720px]:w-[min(290px,62vw)]">
-        {/*
-          面板由自己那行小标题命名，而不是另写一份 aria-label：两处都要跟着语言翻，
-          分开写就会有一天只翻了一处，屏幕阅读器念的和屏幕上的字对不上。
-        */}
-        <Panel aria-labelledby="tank-size-label" className="grid gap-1.5">
-          <PanelHeading id="tank-size-label">{t('tank.heading')}</PanelHeading>
-          <Select value={preset.id} onValueChange={(id) => chooseTank(getTankPreset(id).id)}>
-            {/*
-              The trigger is labelled by the heading above it rather than carrying
-              its own label: Radix renders a button, not a form control, so a
-              <label for> would have nothing to point at.
-            */}
-            <SelectTrigger
-              aria-labelledby="tank-size-label"
-              className="w-full bg-control text-ink hover:bg-control-hover"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            {/*
-              Hung below the trigger rather than aligned to the chosen row. The
-              panel sits near the top of the window, so aligning the list on the
-              current size — the default — pushes the sizes above it off screen,
-              and 迷你缸 loses its top edge whenever 标准缸 or lower is chosen.
-            */}
-            <SelectContent align="start" position="popper">
-              {TANK_PRESETS.map(({ dimensions, id }) => (
-                <SelectItem key={id} value={id}>
-                  {t(`tanks.${id}`)} · {dimensions.length} × {dimensions.width} ×{' '}
-                  {dimensions.height} cm
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <output className="text-[0.78rem] tracking-[0.06em] text-mist">
-            {t('tank.volume', { liters: preset.volumeLiters })}
-          </output>
-        </Panel>
-
-        <FishMarket capacity={capacity} counts={counts} onAdd={add} onRemove={remove} />
+      <div className="pointer-events-none absolute top-10 right-12 z-10 grid max-h-[calc(100%-130px)] w-[290px] content-start gap-3.5 max-[720px]:hidden [&>*]:pointer-events-auto">
+        <TankControls
+          capacity={capacity}
+          counts={counts}
+          idPrefix="desktop"
+          onAdd={add}
+          onChooseTank={chooseTank}
+          onRemove={remove}
+          preset={preset}
+        />
       </div>
 
       <LanguagePicker />
+
+      <Drawer direction="bottom" open={controlsOpen} onOpenChange={setControlsOpen}>
+        <DrawerTrigger asChild>
+          <Button
+            aria-controls="aquarium-controls"
+            className="absolute right-4 bottom-4 z-10 hidden h-11 size-auto gap-2 rounded-full border-glass/24 bg-surface/80 px-4 text-mist backdrop-blur-md hover:border-lagoon/70 hover:bg-control-hover hover:text-ink max-[720px]:inline-flex"
+            type="button"
+          >
+            <SlidersHorizontalIcon />
+            {t('controls.open')}
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent className="max-h-[80dvh] border-glass/24 bg-surface/95 text-ink">
+          <DrawerHeader className="flex-row items-center justify-between px-4 py-2 text-left">
+            <DrawerTitle className="text-xs tracking-[0.16em] text-lagoon uppercase">
+              {t('controls.heading')}
+            </DrawerTitle>
+            <DrawerClose asChild>
+              <Button
+                aria-label={t('controls.close')}
+                className="size-11 border-input bg-control text-ink hover:bg-control-hover"
+                type="button"
+              >
+                <XIcon />
+              </Button>
+            </DrawerClose>
+          </DrawerHeader>
+          <div
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-6"
+            id="aquarium-controls"
+          >
+            <TankControls
+              capacity={capacity}
+              counts={counts}
+              idPrefix="mobile"
+              onAdd={add}
+              onChooseTank={chooseTank}
+              onRemove={remove}
+              preset={preset}
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/*
         两半提示之间用不断行空格分隔：英文那版比中文长出一截，普通空格会让它在窄屏
@@ -285,10 +297,64 @@ function AquariumView({ frameloop, modelUrls }: Omit<AppProps, 'i18n'>) {
       <div
         id="control-hint"
         aria-label={t('camera.hintLabel')}
-        className="pointer-events-none absolute right-12 bottom-9 z-10 rounded-full border border-glass/24 bg-surface/54 px-3.5 py-2.5 text-[0.76rem] tracking-[0.08em] text-mist backdrop-blur-md max-[720px]:right-4 max-[720px]:bottom-4"
+        className={`pointer-events-none absolute right-12 bottom-9 z-10 rounded-full border border-glass/24 bg-surface/54 px-3.5 py-2.5 text-[0.76rem] tracking-[0.08em] text-mist whitespace-nowrap backdrop-blur-md max-[720px]:right-auto max-[720px]:bottom-18 max-[720px]:left-1/2 max-[720px]:-translate-x-1/2 ${controlsOpen ? 'max-[720px]:hidden' : ''}`}
       >
         {t('camera.drag')}&nbsp;&nbsp;·&nbsp;&nbsp;{t('camera.zoom')}
       </div>
     </main>
+  )
+}
+
+type TankControlsProps = {
+  capacity: number
+  counts: Readonly<Partial<Record<FishSpeciesId, number>>>
+  idPrefix: string
+  onAdd: (species: FishSpeciesId) => void
+  onChooseTank: (id: TankPresetId) => void
+  onRemove: (species: FishSpeciesId) => void
+  preset: ReturnType<typeof getTankPreset>
+}
+
+function TankControls({
+  capacity,
+  counts,
+  idPrefix,
+  onAdd,
+  onChooseTank,
+  onRemove,
+  preset,
+}: TankControlsProps) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="grid content-start gap-3.5">
+      <Panel aria-labelledby={`${idPrefix}-tank-size-label`} className="grid gap-1.5">
+        <PanelHeading id={`${idPrefix}-tank-size-label`}>{t('tank.heading')}</PanelHeading>
+        <Select value={preset.id} onValueChange={(id) => onChooseTank(getTankPreset(id).id)}>
+          <SelectTrigger
+            aria-labelledby={`${idPrefix}-tank-size-label`}
+            className="w-full bg-control text-ink hover:bg-control-hover"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="start" position="popper">
+            {TANK_PRESETS.map(({ dimensions, id }) => (
+              <SelectItem key={id} value={id}>
+                {t(`tanks.${id}`)} · {dimensions.length} × {dimensions.width} ×{' '}
+                {dimensions.height} cm
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <output
+          className="text-[0.78rem] tracking-[0.06em] text-mist"
+          id={`${idPrefix}-tank-volume`}
+        >
+          {t('tank.volume', { liters: preset.volumeLiters })}
+        </output>
+      </Panel>
+
+      <FishMarket capacity={capacity} counts={counts} onAdd={onAdd} onRemove={onRemove} />
+    </div>
   )
 }
