@@ -27,8 +27,14 @@ gh issue comment 3 --body "…"  # 把进展记回去，别只留在对话里
   里面有量朝向和缩放的方法，以及踩过的坑。
 - 样式用 Tailwind，控件用 shadcn/ui，颜色一律取 `src/styles.css` 里 `@theme` 定义的
   那批，不要在组件里另写十六进制值。缸里的场景另有一份同名副本
-  （`src/aquarium/palette.ts`），改色的三个落点见 README 的样式一节。
-- 提交前跑 `pnpm check`（交互测试 + 类型检查 + 构建）。
+  （`src/aquarium/palette.ts`），改色的落点见 README 的样式一节。
+- 界面文案在 `src/i18n/locales/{zh,en}.json`，组件里一律 `t('key')`，不要写死任何一种
+  语言，也不要自己搭语言检测/存储那一层——那是
+  `i18next-browser-languagedetector` 的活，配置在 `src/i18n/index.ts`。
+- 加载幕布是一个普通组件（`src/aquarium/LoadingCurtain.tsx`），文案样式进度都在那一个
+  文件里。`index.html` 保持干净，别往里加文案或样式——代价是 React 挂上之前没有加载
+  指示（慢网下十几秒），这是明知的取舍，见 README 的加载幕布一节。
+- 提交前跑 `pnpm check`（交互测试 + 副本核对 + 类型检查 + 构建）。
 - 交互测试是串行跑的，见 README 的测试一节；别改成并行。
 
 ## 测试只写交互测试

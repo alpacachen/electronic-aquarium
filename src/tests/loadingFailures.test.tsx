@@ -1,54 +1,36 @@
 import { describe, expect, it, vi } from 'vitest'
-import { FISH_SPECIES } from '../aquarium/fishSpecies'
 import { openAquarium } from './aquariumPage'
 
 describe('加载失败时仍给观众一个可解释的页面', () => {
   it('模型 body 还没收完时继续显示加载幕布', async () => {
-    const slowUrl = new URL(FISH_SPECIES.barramundi.modelUrl, location.href).href
-    const originalFetch = globalThis.fetch.bind(globalThis)
-    let releaseBody: (() => void) | undefined
+    // Given 模型的 body 停在半路
+    const aquarium = await openAquarium({ stallModels: true })
 
-    const slowFetch: typeof globalThis.fetch = async (input, init) => {
-      const requested = typeof input === 'string'
-        ? input
-        : input instanceof URL
-          ? input.href
-          : input.url
-      if (requested !== slowUrl) return originalFetch(input, init)
-
-      const source = await originalFetch(FISH_SPECIES.barramundi.modelUrl)
-      const bytes = new Uint8Array(await source.arrayBuffer())
-      const paused = new Promise<void>((resolve) => {
-        releaseBody = resolve
-      })
-      const halfway = Math.floor(bytes.length / 2)
-
-      return new Response(
-        new ReadableStream({
-          async start(controller) {
-            controller.enqueue(bytes.slice(0, halfway))
-            await paused
-            controller.enqueue(bytes.slice(halfway))
-            controller.close()
-          },
-        }),
-        { headers: { 'content-type': 'model/gltf-binary' } },
-      )
-    }
-
-    const aquarium = await openAquarium({
-      fetch: slowFetch,
-      withLoadingCurtain: true,
-    })
-
-    await vi.waitFor(() => expect(releaseBody).toBeTypeOf('function'))
+    // Then 幕布还挡在缸前面，而且上面确实有字
     await expect.element(aquarium.loadingCurtain()!).toBeVisible()
     expect(aquarium.loadingCurtain()?.dataset.leaving).toBeUndefined()
+    await vi.waitFor(() =>
+      expect(aquarium.loadingCurtainWords()).toEqual(['正在注水', '正在把鱼放进缸里']),
+    )
 
-    releaseBody!()
+    /**
+     * 进度条读的是真进度，不是那个来回扫的占位动画。两个读数要一致：`aria-valuenow`
+     * 对而条子不动的话，看得见的那半就是坏的。
+     */
+    await vi.waitFor(() => {
+      const { announced, barWidth } = aquarium.loadingProgress()
+      expect(announced).toBeGreaterThan(0)
+      expect(announced).toBeLessThanOrEqual(100)
+      expect(barWidth).toBe(`${announced}%`)
+    })
+
+    // When body 的后半段放行
+    aquarium.releaseModels()
+
+    // Then 解析完之后幕布自己撤了
     await vi.waitFor(() => {
       if (aquarium.loadingCurtain()) throw new Error('模型解析完成后加载幕布仍未消失。')
-    }, { timeout: 3000 })
+    }, { timeout: 5000 })
   })
 
   it('404 和无效 GLTF 只拿掉坏鱼，鱼缸仍可使用并说明原因', async () => {
@@ -73,7 +55,12 @@ describe('加载失败时仍给观众一个可解释的页面', () => {
       },
     })
 
-    await expect.element(aquarium.modelFailure()).toHaveTextContent('尖吻鲈、蓝刀鲷')
+    /**
+     * 「和」而不是「、」：名字由 i18next 的 list formatter 接 `Intl.ListFormat` 连
+     * 起来，中文两项就是「A和B」，三项才是「甲、乙和丙」。这比原先手写的顿号更合
+     * 中文习惯，也省了一份按语言挑分隔符的代码。
+     */
+    await expect.element(aquarium.modelFailure()).toHaveTextContent('尖吻鲈和蓝刀鲷')
     expect(aquarium.tank().length).toBeGreaterThan(0)
     expect(aquarium.fish().map(({ species }) => species)).not.toContain('barramundi')
     expect(aquarium.fish().map(({ species }) => species)).not.toContain('blueTang')

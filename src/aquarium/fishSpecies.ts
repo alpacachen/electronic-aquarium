@@ -6,11 +6,13 @@
  */
 const modelUrl = (path: string) => `${import.meta.env.BASE_URL}models/${path}`
 
+/**
+ * 鱼种名不在这里，在 src/i18n/locales/ 的语言包里按 id 列着：这份说的是鱼怎么游、
+ * 模型多大，和界面用哪种语言称呼它无关。
+ */
 export type FishSpecies = Readonly<{
   animation?: Readonly<{ name: string; speed: number }>
   centerY: number
-  /** What the fish is called in the market. */
-  label: string
   modelUrl: string
   /** What the species reads like in the water, before individual variation. */
   temperament: Readonly<{
@@ -43,7 +45,6 @@ export type FishSpecies = Readonly<{
 export const FISH_SPECIES = {
   barramundi: {
     centerY: 0.143,
-    label: '尖吻鲈',
     modelUrl: modelUrl('barramundi/barramundi.glb'),
     rotationY: Math.PI / 2,
     tail: {
@@ -60,7 +61,6 @@ export const FISH_SPECIES = {
   blueTang: {
     animation: { name: 'Armature|Swim.001', speed: 1.5 },
     centerY: 0.1407,
-    label: '蓝刀鲷',
     modelUrl: modelUrl('blue-tang/blue-tang.glb'),
     rotationY: Math.PI / 2,
     /** Busy and inquisitive, ranging through the middle of the tank. */
@@ -70,7 +70,6 @@ export const FISH_SPECIES = {
   clownfish: {
     animation: { name: 'Armature|Swim', speed: 1.8 },
     centerY: 0.3261,
-    label: '小丑鱼',
     modelUrl: modelUrl('clownfish/clownfish.glb'),
     rotationY: Math.PI / 2,
     /** Small and fidgety: the largest change of pace, and it roams the most. */
@@ -80,7 +79,6 @@ export const FISH_SPECIES = {
   goldfish: {
     animation: { name: 'Swim_Slow', speed: 1 },
     centerY: 0.0613,
-    label: '金鱼',
     modelUrl: modelUrl('goldfish/goldfish_variety_3.glb'),
     rotationY: 0,
     /** Unhurried, drifting around the middle. */
@@ -90,7 +88,6 @@ export const FISH_SPECIES = {
   tuna: {
     animation: { name: 'Armature|Swim', speed: 1.2 },
     centerY: 0.2061,
-    label: '金枪鱼',
     modelUrl: modelUrl('tuna/tuna.glb'),
     rotationY: Math.PI / 2,
     /** Built to cruise: the fastest, and quick to change level because of it. */

@@ -1,4 +1,5 @@
 import { MinusIcon, PlusIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { FISH_SPECIES } from './fishSpecies'
 import type { FishSpeciesId } from './fishSpecies'
@@ -24,16 +25,20 @@ export type FishMarketProps = {
  * because the glyph alone says nothing to a screen reader.
  */
 export function FishMarket({ capacity, counts, onAdd, onRemove }: FishMarketProps) {
+  const { t } = useTranslation()
   const total = SPECIES.reduce((sum, species) => sum + (counts[species] ?? 0), 0)
   const full = total >= capacity
 
   return (
-    <Panel aria-label="鱼市">
-      <PanelHeading className="mb-2.5">鱼市</PanelHeading>
+    /* 面板由自己那行小标题命名，理由同鱼缸尺寸那块，见 App.tsx。 */
+    <Panel aria-labelledby="fish-market-label">
+      <PanelHeading className="mb-2.5" id="fish-market-label">
+        {t('market.heading')}
+      </PanelHeading>
 
       <ul className="grid list-none gap-1.5">
         {SPECIES.map((species) => {
-          const { label } = FISH_SPECIES[species]
+          const label = t(`fish.${species}`)
           const count = counts[species] ?? 0
 
           return (
@@ -49,7 +54,7 @@ export function FishMarket({ capacity, counts, onAdd, onRemove }: FishMarketProp
                 ×{count}
               </span>
               <Button
-                aria-label={`少养一条${label}`}
+                aria-label={t('market.removeOne', { label })}
                 className="size-6.5 border-input bg-control text-ink hover:border-lagoon/70 hover:bg-control-hover hover:text-ink"
                 disabled={count === 0}
                 onClick={() => onRemove(species)}
@@ -58,7 +63,7 @@ export function FishMarket({ capacity, counts, onAdd, onRemove }: FishMarketProp
                 <MinusIcon />
               </Button>
               <Button
-                aria-label={`多养一条${label}`}
+                aria-label={t('market.addOne', { label })}
                 className="size-6.5 border-input bg-control text-ink hover:border-lagoon/70 hover:bg-control-hover hover:text-ink"
                 disabled={full}
                 onClick={() => onAdd(species)}
@@ -77,7 +82,7 @@ export function FishMarket({ capacity, counts, onAdd, onRemove }: FishMarketProp
         the click landed.
       */}
       <p aria-live="polite" className="mt-3 text-[0.76rem] tracking-[0.06em] text-mist">
-        缸里 {total} 条 · 上限 {capacity} 条{full ? ' · 已养满' : ''}
+        {t('market.tally', { capacity, context: full ? 'full' : undefined, stocked: total })}
       </p>
     </Panel>
   )

@@ -1,6 +1,6 @@
-import { Edges, OrbitControls, useProgress } from '@react-three/drei'
+import { Edges, OrbitControls } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
-import { Suspense, useEffect, useLayoutEffect, useRef } from 'react'
+import { Suspense, useEffect, useLayoutEffect } from 'react'
 import { BackSide, DoubleSide } from 'three'
 import { PALETTE } from './palette'
 import { Fish, FishErrorBoundary } from './Fish'
@@ -8,7 +8,6 @@ import { FISH_SPECIES } from './fishSpecies'
 import type { FishSpeciesId } from './fishSpecies'
 import type { FishSeed } from './fishSimulation'
 import { clearAquariumProbe, setAquariumProbe } from './aquariumProbe'
-import { liftLoadingCurtain } from './loadingCurtain'
 import type { StockedFish } from './stocking'
 import type { TankSceneGeometry } from './tankPresets'
 
@@ -128,18 +127,6 @@ function CameraRig({ geometry }: { geometry: TankSceneGeometry }) {
   return null
 }
 
-function LoadingCurtainBridge() {
-  const { active, errors, progress, total } = useProgress()
-  const started = useRef(false)
-
-  useEffect(() => {
-    if (active || total > 0) started.current = true
-    if (started.current && !active) liftLoadingCurtain(progress, errors)
-  }, [active, errors, progress, total])
-
-  return null
-}
-
 function AquariumProbe({ geometry }: { geometry: TankSceneGeometry }) {
   const state = useThree()
 
@@ -164,7 +151,6 @@ export function Aquarium({
 }) {
   return (
     <>
-      <LoadingCurtainBridge />
       <AquariumProbe geometry={geometry} />
       <color attach="background" args={[PALETTE.ABYSS]} />
       <fog
