@@ -142,26 +142,29 @@ describe('逛鱼市', () => {
     await aquarium.market().buy('小丑鱼')
     await aquarium.market().sell('金鱼')
 
-    /** 新来的鱼要过一会儿模型才挂上，太早取样读到的是还没上骨骼的空姿态。 */
+    /** 新来的鱼要过一会儿模型才挂上，太早取样还读不到动画进度。 */
     aquarium.letTimePass(1)
 
     /**
      * Then 每条鱼都还在换姿态，没有僵在水里
      *
-     * 自带骨骼动画的鱼看骨骼；barramundi 是程序化摆尾，看尾巴的相位。不把两者用
+     * 自带动画的鱼看播放时间；barramundi 是程序化摆尾，看尾巴的相位。不把两者用
      * 「或」并起来判断：没有 species.tail 的鱼种，tailAngle 会退回读朝向，那个值
      * 光靠转弯就会变，僵住的鱼也能混过去。
      */
-    const before = aquarium.fish().map(({ poseKey, tailAngle }) => ({ poseKey, tailAngle }))
+    const before = aquarium.fish().map(({ animationTime, tailAngle }) => ({
+      animationTime,
+      tailAngle,
+    }))
     aquarium.letTimePass(0.3)
 
-    aquarium.fish().forEach(({ poseKey, species, tailAngle }, index) => {
+    aquarium.fish().forEach(({ animationTime, species, tailAngle }, index) => {
       const was = before[index]!
       if (species === 'barramundi') {
         expect(tailAngle, `${species} 的尾巴僵住了`).not.toBe(was.tailAngle)
         return
       }
-      expect(poseKey, `${species} 的骨骼僵住了`).not.toBe(was.poseKey)
+      expect(animationTime, `${species} 的动画僵住了`).not.toBe(was.animationTime)
     })
   })
 

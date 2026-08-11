@@ -1,10 +1,10 @@
-import { _roots, advance } from '@react-three/fiber'
 import { afterEach, vi } from 'vitest'
 import { page, userEvent } from 'vitest/browser'
 import { cleanup, render } from 'vitest-browser-react'
 import { Box3, Vector3 } from 'three'
-import type { Mesh, Object3D, WebGLRenderer } from 'three'
+import type { Object3D, WebGLRenderer } from 'three'
 import { App } from '../App'
+import { getAquariumProbe } from '../aquarium/aquariumProbe'
 import { quietDependencyWarnings } from './quietDependencyWarnings'
 import '../styles.css'
 
@@ -18,9 +18,6 @@ quietDependencyWarnings()
 const layout = document.createElement('style')
 layout.textContent = 'body > div { width: 100vw; height: 100vh; margin: 0 }'
 document.head.append(layout)
-
-/** The tank is a group of three meshes: cabinet, glass box and substrate. */
-const MESHES_PER_TANK = 3
 
 /** The largest simulation step accepted by Fish, keeping tests fast and exact. */
 const FRAME_SECONDS = 1 / 20
@@ -43,7 +40,7 @@ afterEach(() => {
    * Unmounting a paused canvas waits for a frame that will never arrive, so the
    * loop is handed back before React tears the tree down.
    */
-  _roots.forEach((root) => root.store.setState({ frameloop: 'always' }))
+  getAquariumProbe()?.resume()
   cleanup()
   openRenderers.forEach(release)
   openRenderers.clear()
@@ -56,8 +53,8 @@ export type RenderedFish = Readonly<{
   headingY: number
   /** Radians the nose is tilted up, as the renderer posed it. */
   pitch: number
-  /** Sums the fish's bone rotations, so any change of pose shows up as a change here. */
-  poseKey: number
+  /** Playback time of the fish's visible animation. */
+  animationTime: number
   scale: number
   species: string
   tailAngle: number
@@ -69,9 +66,6 @@ export type RenderedTank = Readonly<{
   height: number
   length: number
 }>
-
-/** The tail bone each species swings, whatever its rig chose to call it. */
-const TAIL_BONES = ['goldfish2Tail1_021', 'Tail']
 
 /** The 鱼市 panel, found by the name a screen reader would read out. */
 const marketPanel = () => document.querySelector('[aria-label="鱼市"]')
@@ -94,26 +88,6 @@ function nameButton(name: string) {
 }
 
 function readFish(group: Object3D): RenderedFish {
-  const tailAngle = () => {
-    const bone = TAIL_BONES.map((name) => group.getObjectByName(name)).find(Boolean)
-    return bone?.quaternion.z
-      ?? Number(group.userData.aquariumTailPhase ?? group.rotation.y)
-  }
-
-  /**
-   * Skinned meshes are posed on the GPU, so a bounding box of the geometry
-   * reports the bind pose rather than what is on screen. Summing the bone
-   * rotations is enough to tell one pose from another.
-   */
-  const poseKey = () => {
-    let sum = 0
-    group.traverse((object) => {
-      if ((object as { isBone?: boolean }).isBone !== true) return
-      sum += object.quaternion.x + object.quaternion.y + object.quaternion.z
-    })
-    return sum
-  }
-
   /**
    * The bounding box walks every vertex of a skinned mesh, which is far too slow
    * to do for each fish on each of the hundreds of samples a movement test
@@ -130,28 +104,19 @@ function readFish(group: Object3D): RenderedFish {
     },
     headingY: group.rotation.y,
     pitch: group.rotation.z,
-    get poseKey() {
-      return poseKey()
+    get animationTime() {
+      return Number(group.userData.aquariumAnimationTime ?? 0)
     },
     position: { x: group.position.x, y: group.position.y, z: group.position.z },
     scale: group.scale.x,
     species: String(group.userData.aquariumFishSpecies ?? ''),
     get tailAngle() {
-      return tailAngle()
+      return Number(group.userData.aquariumTailPhase ?? group.rotation.y)
     },
     get topY() {
       return extent().max.y
     },
   }
-}
-
-function readBoxSize(mesh: Mesh): RenderedTank {
-  const { depth, height, width } = (
-    mesh.geometry as unknown as {
-      parameters: { depth: number; height: number; width: number }
-    }
-  ).parameters
-  return { depth, height, length: width }
 }
 
 export type AquariumPage = Awaited<ReturnType<typeof openAquarium>>
@@ -172,12 +137,11 @@ export async function openAquarium() {
   const liveScene = async () => {
     const found = await vi.waitFor(
       () => {
-        const canvas = document.querySelector('canvas')
-        const state = canvas ? _roots.get(canvas)?.store.getState() : undefined
-        if (!state || state.scene.children.length === 0) {
+        const probe = getAquariumProbe()
+        if (!probe || probe.scene.children.length === 0) {
           throw new Error('The aquarium scene has not been rendered yet.')
         }
-        return state
+        return probe
       },
       { interval: 50, timeout: 5000 },
     )
@@ -189,16 +153,6 @@ export async function openAquarium() {
 
   let scene = await liveScene()
   let elapsed = 0
-
-  const groupsOf = (meshCount: number) => {
-    const found: Object3D[] = []
-    scene.scene.traverse((object) => {
-      if (object.type === 'Group' && object.children.length === meshCount) {
-        found.push(object)
-      }
-    })
-    return found
-  }
 
   const fishGroups = () => {
     const found: Object3D[] = []
@@ -219,21 +173,13 @@ export async function openAquarium() {
    */
   const letTimePass = (seconds = 1) => {
     const frames = Math.max(1, Math.round(seconds / FRAME_SECONDS))
-    const { internal } = scene
-    const priority = internal.priority
-
-    internal.priority = 1
-    try {
-      for (let frame = 0; frame < frames - 1; frame += 1) {
-        elapsed += FRAME_SECONDS
-        advance(elapsed, true, scene)
-      }
-    } finally {
-      internal.priority = priority
+    for (let frame = 0; frame < frames - 1; frame += 1) {
+      elapsed += FRAME_SECONDS
+      scene.advance(elapsed, false)
     }
 
     elapsed += FRAME_SECONDS
-    advance(elapsed, true, scene)
+    scene.advance(elapsed)
   }
 
   /**
@@ -248,21 +194,13 @@ export async function openAquarium() {
    */
   const eachFrame = (seconds: number, sample: () => void) => {
     const frames = Math.max(1, Math.round(seconds / FRAME_SECONDS))
-    const { internal } = scene
-    const priority = internal.priority
-
-    internal.priority = 1
-    try {
-      for (let frame = 0; frame < frames; frame += 1) {
-        elapsed += FRAME_SECONDS
-        advance(elapsed, true, scene)
-        sample()
-      }
-    } finally {
-      internal.priority = priority
+    for (let frame = 0; frame < frames; frame += 1) {
+      elapsed += FRAME_SECONDS
+      scene.advance(elapsed, false)
+      sample()
     }
 
-    advance(elapsed, true, scene)
+    scene.advance(elapsed)
   }
 
   /**
@@ -324,7 +262,7 @@ export async function openAquarium() {
     fish: (): readonly RenderedFish[] => fishGroups().map(readFish),
 
     /** The glass box a viewer sees, in world units. */
-    tank: (): RenderedTank => readBoxSize(groupsOf(MESHES_PER_TANK)[0]!.children[1] as Mesh),
+    tank: (): RenderedTank => scene.tankSize,
 
     camera: () => ({
       distance: scene.camera.position.length(),
