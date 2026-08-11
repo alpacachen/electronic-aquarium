@@ -34,8 +34,14 @@
   "fish": {
     "barramundi": "尖吻鲈",
     "blueTang": "蓝刀鲷",
+    "armoredCatfish": "装甲鲶鱼",
+    "parrotFish": "鹦嘴鱼",
+    "betta": "斗鱼",
+    "cardinalFish": "天竺鲷",
     "clownfish": "小丑鱼",
+    "tetra": "脂鲤",
     "goldfish": "金鱼",
+    "mandarinFish": "麒麟鱼",
     "tuna": "金枪鱼"
   },
   "tanks": {

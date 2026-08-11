@@ -13,6 +13,8 @@ const modelUrl = (path: string) => `${import.meta.env.BASE_URL}models/${path}`
 export type FishSpecies = Readonly<{
   animation?: Readonly<{ name: string; speed: number }>
   centerY: number
+  /** Multiplies the source material color when an asset is unusually dark. */
+  brightness?: number
   modelUrl: string
   /** What the species reads like in the water, before individual variation. */
   temperament: Readonly<{
@@ -67,6 +69,42 @@ export const FISH_SPECIES = {
     temperament: { depth: 0.1, period: 56, speed: 0.64, surge: 0.3 },
     unitScale: 0.09,
   },
+  armoredCatfish: {
+    animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.3 },
+    brightness: 8,
+    centerY: 0.1,
+    modelUrl: modelUrl('armored-catfish/armored-catfish.glb'),
+    rotationY: Math.PI / 2,
+    temperament: { depth: -0.2, period: 58, speed: 0.52, surge: 0.18 },
+    unitScale: 0.17,
+  },
+  parrotFish: {
+    animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.5 },
+    brightness: 4,
+    centerY: 0.29,
+    modelUrl: modelUrl('parrot-fish/parrot-fish.glb'),
+    rotationY: Math.PI / 2,
+    temperament: { depth: 0.15, period: 54, speed: 0.63, surge: 0.24 },
+    unitScale: 0.17,
+  },
+  betta: {
+    animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.2 },
+    brightness: 4,
+    centerY: -0.04,
+    modelUrl: modelUrl('betta/betta.glb'),
+    rotationY: Math.PI / 2,
+    temperament: { depth: 0.25, period: 48, speed: 0.45, surge: 0.22 },
+    unitScale: 0.18,
+  },
+  cardinalFish: {
+    animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.7 },
+    brightness: 5,
+    centerY: -0.02,
+    modelUrl: modelUrl('cardinal-fish/cardinal-fish.glb'),
+    rotationY: Math.PI / 2,
+    temperament: { depth: -0.05, period: 60, speed: 0.62, surge: 0.28 },
+    unitScale: 0.18,
+  },
   clownfish: {
     animation: { name: 'Armature|Swim', speed: 1.8 },
     centerY: 0.3261,
@@ -76,6 +114,15 @@ export const FISH_SPECIES = {
     temperament: { depth: -0.1, period: 66, speed: 0.58, surge: 0.34 },
     unitScale: 0.13,
   },
+  tetra: {
+    animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.9 },
+    brightness: 5,
+    centerY: -0.02,
+    modelUrl: modelUrl('tetra/tetra.glb'),
+    rotationY: Math.PI / 2,
+    temperament: { depth: 0, period: 50, speed: 0.7, surge: 0.32 },
+    unitScale: 0.19,
+  },
   goldfish: {
     animation: { name: 'Swim_Slow', speed: 1 },
     centerY: 0.0613,
@@ -84,6 +131,15 @@ export const FISH_SPECIES = {
     /** Unhurried, drifting around the middle. */
     temperament: { depth: 0.05, period: 52, speed: 0.6, surge: 0.2 },
     unitScale: 7.5,
+  },
+  mandarinFish: {
+    animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.4 },
+    brightness: 4,
+    centerY: 0.02,
+    modelUrl: modelUrl('mandarin-fish/mandarin-fish.glb'),
+    rotationY: Math.PI / 2,
+    temperament: { depth: -0.1, period: 62, speed: 0.5, surge: 0.28 },
+    unitScale: 0.225,
   },
   tuna: {
     animation: { name: 'Armature|Swim', speed: 1.2 },
