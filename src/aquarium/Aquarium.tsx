@@ -154,10 +154,12 @@ function AquariumProbe({ geometry }: { geometry: TankSceneGeometry }) {
 export function Aquarium({
   fish,
   geometry,
+  modelUrls,
   onFishError,
 }: {
   fish: readonly StockedFish[]
   geometry: TankSceneGeometry
+  modelUrls?: Partial<Record<FishSpeciesId, string>>
   onFishError(species: FishSpeciesId): void
 }) {
   return (
@@ -212,6 +214,7 @@ export function Aquarium({
             <Suspense fallback={null}>
               <Fish
                 bounds={geometry.fishBounds}
+                modelUrl={modelUrls?.[species]}
                 modelScale={geometry.fishScale}
                 seed={scaleFishSeed(seed, geometry)}
                 species={FISH_SPECIES[species]}

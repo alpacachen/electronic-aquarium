@@ -3,8 +3,9 @@ import { page, userEvent } from 'vitest/browser'
 import { cleanup, render } from 'vitest-browser-react'
 import { Box3, Vector3 } from 'three'
 import type { Object3D, WebGLRenderer } from 'three'
-import { App } from '../App'
 import { getAquariumProbe } from '../aquarium/aquariumProbe'
+import type { FishSpeciesId } from '../aquarium/fishSpecies'
+import { startLoadingCurtain } from '../aquarium/loadingCurtain'
 import { quietDependencyWarnings } from './quietDependencyWarnings'
 import '../styles.css'
 
@@ -28,6 +29,8 @@ const FRAME_SECONDS = 1 / 20
  * released explicitly once its test ends.
  */
 const openRenderers = new Set<WebGLRenderer>()
+let restoreFetch: (() => void) | undefined
+let restoreExpectedErrors: (() => void) | undefined
 
 function release(renderer: WebGLRenderer) {
   openRenderers.delete(renderer)
@@ -44,7 +47,18 @@ afterEach(() => {
   cleanup()
   openRenderers.forEach(release)
   openRenderers.clear()
+  restoreFetch?.()
+  restoreFetch = undefined
+  restoreExpectedErrors?.()
+  restoreExpectedErrors = undefined
+  document.getElementById('loading-curtain')?.remove()
 })
+
+type OpenAquariumOptions = {
+  fetch?: typeof globalThis.fetch
+  modelUrls?: Partial<Record<FishSpeciesId, string>>
+  withLoadingCurtain?: boolean
+}
 
 export type RenderedFish = Readonly<{
   /** Longest horizontal extent on screen, in world units. */
@@ -130,8 +144,51 @@ export type AquariumPage = Awaited<ReturnType<typeof openAquarium>>
  * software at a few frames per second, so waiting on wall-clock time would make
  * every test slow and flaky; stepping the clock keeps them quick and repeatable.
  */
-export async function openAquarium() {
-  render(<App frameloop="never" />)
+export async function openAquarium({
+  fetch: fetchOverride,
+  modelUrls,
+  withLoadingCurtain = false,
+}: OpenAquariumOptions = {}) {
+  if (fetchOverride) {
+    const previous = globalThis.fetch
+    globalThis.fetch = fetchOverride
+    restoreFetch = () => {
+      globalThis.fetch = previous
+    }
+  }
+
+  if (withLoadingCurtain) {
+    const curtain = document.createElement('div')
+    curtain.id = 'loading-curtain'
+    curtain.innerHTML = `
+      <div class="loading-curtain__body">
+        <div class="loading-curtain__track" role="progressbar">
+          <div class="loading-curtain__fill"></div>
+        </div>
+        <p class="loading-curtain__hint">正在把鱼放进缸里</p>
+      </div>`
+    document.body.append(curtain)
+    startLoadingCurtain()
+  }
+
+  if (modelUrls) {
+    const expected = (event: Event) => event.preventDefault()
+    const consoleError = console.error
+    window.addEventListener('error', expected)
+    window.addEventListener('unhandledrejection', expected)
+    console.error = (...values) => {
+      const message = values.map((value) => value instanceof Error ? value.message : String(value)).join(' ')
+      if (!message.includes('Could not load')) consoleError(...values)
+    }
+    restoreExpectedErrors = () => {
+      window.removeEventListener('error', expected)
+      window.removeEventListener('unhandledrejection', expected)
+      console.error = consoleError
+    }
+  }
+
+  const { App } = await import('../App')
+  const rendered = await render(<App frameloop="never" modelUrls={modelUrls} />)
 
   /** Finds the live renderer without coupling tests to how the canvas is mounted. */
   const liveScene = async () => {
@@ -282,6 +339,19 @@ export async function openAquarium() {
     capacity: () => page.getByRole('status'),
     heading: () => page.getByRole('heading', { level: 1 }),
     text: (content: string | RegExp) => page.getByText(content),
+    loadingCurtain: () => document.getElementById('loading-curtain'),
+    modelFailure: () => page.getByRole('alert'),
+
+    showWebGLFallback: async () => {
+      const getContext = HTMLCanvasElement.prototype.getContext
+      HTMLCanvasElement.prototype.getContext = (() => null) as typeof getContext
+      try {
+        await rendered.rerender(<App frameloop="never" key="unavailable" />)
+      } finally {
+        HTMLCanvasElement.prototype.getContext = getContext
+      }
+      return page.getByText('当前浏览器无法启用 WebGL，暂时无法显示电子鱼缸。')
+    },
 
     /**
      * The tank size the picker currently shows, e.g. 标准缸 · 60 × 30 × 36 cm.

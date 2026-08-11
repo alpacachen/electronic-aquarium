@@ -12,6 +12,7 @@ import type { AquariumBounds, FishSeed } from './fishSimulation'
 
 type FishProps = {
   bounds: AquariumBounds
+  modelUrl?: string
   modelScale: number
   seed: FishSeed
   species: FishSpecies
@@ -53,14 +54,14 @@ function startAtFirstKeyframe(source: AnimationClip) {
   return clip
 }
 
-export function Fish({ bounds, modelScale, seed, species, speciesId }: FishProps) {
+export function Fish({ bounds, modelScale, modelUrl, seed, species, speciesId }: FishProps) {
   const fishRef = useRef<Group>(null)
   const modelRef = useRef<Group>(null)
   const stateRef = useRef(createFish(seed, bounds))
   const boundsRef = useRef(bounds)
   const animationTimeRef = useRef(0)
   const tailUniformsRef = useRef<Array<{ value: number }>>([])
-  const { animations, scene } = useGLTF(species.modelUrl)
+  const { animations, scene } = useGLTF(modelUrl ?? species.modelUrl)
   const swimAnimation = useMemo(() => {
     const source = species.animation
       ? animations.find(({ name }) => name === species.animation?.name) ?? animations[0]
