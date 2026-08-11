@@ -4,133 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#061823" />
-    <title>电子鱼缸</title>
 
     <!--
-      Inlined rather than left to styles.css, which is itself a request: the
-      curtain has to be painted on the very first frame, or a viewer sees an
-      unstyled flash of text before it.
+      这两样是没加载完之前的样子，i18next 一起来就由 App 换成观众那种语言（`<html
+      lang>` 和 document.title 都在 React 树之外，库不碰它们）。
 
-      Its token values mirror src/styles.css and `pnpm check:colors` keeps this
-      first-paint copy in sync with the theme and Three.js scene.
+      写中文是因为这只缸原本就是中文的。英文观众在模块加载完之前会看到一瞬中文标题：
+      标签页上那行字比正文低一档，不值得为它在这里内联一套语言检测。
     -->
-    <style>
-      :root {
-        --color-abyss: #061823;
-        --color-shell: #0d4454;
-        --color-ink: #effcff;
-        --color-mist: #a5cdd7;
-        --color-lagoon: #64d9e8;
-        --color-glass: #81d8e7;
-        --color-lamp: #26bde2;
-      }
-
-      #loading-curtain {
-        position: fixed;
-        display: grid;
-        inset: 0;
-        place-items: center;
-        color: var(--color-ink);
-        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-        background:
-          radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--color-shell) 55%, transparent), transparent 46%),
-          var(--color-abyss);
-        transition: opacity 420ms ease;
-        z-index: 2;
-      }
-
-      #loading-curtain[data-leaving] {
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .loading-curtain__body {
-        width: min(320px, 74vw);
-        text-align: center;
-      }
-
-      .loading-curtain__phase {
-        color: var(--color-lagoon);
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 0.24em;
-      }
-
-      .loading-curtain__title {
-        margin: 0.5rem 0 1.35rem;
-        font-size: 1.6rem;
-        font-weight: 520;
-        letter-spacing: -0.03em;
-      }
-
-      .loading-curtain__track {
-        overflow: hidden;
-        height: 3px;
-        border-radius: 999px;
-        background: color-mix(in srgb, var(--color-glass) 18%, transparent);
-      }
-
-      /*
-        Sweeps until the first content-length lands, then fills to the real
-        figure — a bar that sat at 0% while the models were on their way would
-        read as stuck.
-      */
-      .loading-curtain__fill {
-        width: 40%;
-        height: 100%;
-        border-radius: 999px;
-        background: linear-gradient(90deg, var(--color-lamp), var(--color-lagoon));
-        animation: loading-sweep 1.25s ease-in-out infinite;
-      }
-
-      #loading-curtain[data-measured] .loading-curtain__fill {
-        animation: none;
-        transition: width 240ms ease;
-      }
-
-      @keyframes loading-sweep {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(250%); }
-      }
-
-      .loading-curtain__hint {
-        margin: 0.9rem 0 0;
-        color: var(--color-mist);
-        font-size: 0.8rem;
-        letter-spacing: 0.06em;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        #loading-curtain { transition: none; }
-        .loading-curtain__fill { animation: none; transition: none; }
-      }
-    </style>
+    <title>电子鱼缸</title>
   </head>
   <body>
     <div id="root"></div>
-
-    <!--
-      The fish models are a few megabytes, so the curtain lives in HTML and paints
-      before JavaScript. Three's loader removes it only after every GLTF has been
-      parsed; a failed fish is then omitted without hiding the rest of the tank.
-    -->
-    <div id="loading-curtain">
-      <div class="loading-curtain__body">
-        <span class="loading-curtain__phase">PHASE 01</span>
-        <p class="loading-curtain__title">正在注水</p>
-        <div
-          class="loading-curtain__track"
-          role="progressbar"
-          aria-label="鱼缸加载进度"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <div class="loading-curtain__fill"></div>
-        </div>
-        <p class="loading-curtain__hint" aria-live="polite">正在把鱼放进缸里</p>
-      </div>
-    </div>
-
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

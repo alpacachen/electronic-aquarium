@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
+import { I18nextProvider, useTranslation } from 'react-i18next'
 import {
   Select,
   SelectContent,
@@ -9,8 +10,9 @@ import {
 } from '@/components/ui/select'
 import { Aquarium } from './aquarium/Aquarium'
 import { FishMarket } from './aquarium/FishMarket'
+import { LanguagePicker } from './aquarium/LanguagePicker'
+import { LoadingCurtain } from './aquarium/LoadingCurtain'
 import { Panel, PanelHeading } from './aquarium/Panel'
-import { FISH_SPECIES } from './aquarium/fishSpecies'
 import type { FishSpeciesId } from './aquarium/fishSpecies'
 import { stockTank, stockingCapacity } from './aquarium/stocking'
 import {
@@ -20,6 +22,8 @@ import {
   getTankPreset,
 } from './aquarium/tankPresets'
 import type { TankPresetId } from './aquarium/tankPresets'
+import { HTML_LANG, createI18n, languageOf } from './i18n'
+import type { I18n } from './i18n'
 
 /** What the tank holds before a viewer changes anything. */
 const DEFAULT_STOCK: Partial<Record<FishSpeciesId, number>> = {
@@ -36,6 +40,12 @@ type AppProps = {
    * clock to the caller, which lets tests advance time on their own terms.
    */
   frameloop?: 'always' | 'never'
+  /**
+   * 用哪个 i18next 实例。不给就自己建一个，走它默认那条路：观众存过的选择优先，
+   * 没有才问浏览器。线上由 main.tsx 建（加载幕布也要用同一个），交互测试一条用例
+   * 建一个，好把语言固定住或者专门去试检测。
+   */
+  i18n?: I18n
   modelUrls?: Partial<Record<FishSpeciesId, string>>
 }
 
@@ -50,7 +60,27 @@ function canUseWebGL() {
   }
 }
 
-export function App({ frameloop = 'always', modelUrls }: AppProps = {}) {
+/**
+ * 语言这一层套在缸外面。
+ *
+ * 切语言只是让 useTranslation 的那几个消费者重渲染，缸自己（Canvas、鱼、镜头）不
+ * 重挂：真要是拿语言给 Canvas 当 key，观众一切语言鱼就会重新入场、视角也被拨回
+ * 默认角度。
+ */
+export function App({ frameloop = 'always', i18n, modelUrls }: AppProps = {}) {
+  /** 只在第一次渲染时建，不然每次重渲染都会新开一个实例、把语言拨回开局那种。 */
+  const [instance] = useState(() => i18n ?? createI18n())
+
+  return (
+    <I18nextProvider i18n={instance}>
+      <AquariumView frameloop={frameloop} modelUrls={modelUrls} />
+    </I18nextProvider>
+  )
+}
+
+function AquariumView({ frameloop, modelUrls }: Omit<AppProps, 'i18n'>) {
+  const { i18n, t } = useTranslation()
+  const language = languageOf(i18n)
   const [tankId, setTankId] = useState<TankPresetId>(DEFAULT_TANK_ID)
   const [counts, setCounts] = useState(DEFAULT_STOCK)
   const [failedSpecies, setFailedSpecies] = useState<ReadonlySet<FishSpeciesId>>(new Set())
@@ -67,6 +97,16 @@ export function App({ frameloop = 'always', modelUrls }: AppProps = {}) {
     [geometry],
   )
   const capacity = stockingCapacity(preset.volumeLiters)
+
+  /**
+   * 文档自己那份语言记录：`<html lang>` 决定屏幕阅读器怎么念，标题是标签页上那行
+   * 字，两者都在 React 树之外，i18next 也不碰它们。首帧由 index.html 的内联脚本写
+   * 好，这里接着维护。
+   */
+  useEffect(() => {
+    document.documentElement.lang = HTML_LANG[language]
+    document.title = t('documentTitle')
+  }, [language, t])
 
   /**
    * Rebuilding the stock list on every render would hand each Fish a new seed
@@ -125,6 +165,12 @@ export function App({ frameloop = 'always', modelUrls }: AppProps = {}) {
   return (
     <main className="relative h-full w-full bg-abyss bg-[radial-gradient(circle_at_50%_30%,--alpha(var(--color-shell)/45%),transparent_44%)]">
       {/*
+        没有 WebGL 就不挂幕布：那种情况下一个模型都不会去下，幕布等不到「加载完」，
+        只能挨到超时才走——白白压在降级提示上面十几秒。
+      */}
+      {webglAvailable && <LoadingCurtain />}
+
+      {/*
         The camera options only place the camera on the first render; from then on
         it belongs to the viewer and the rig inside the scene. They are derived
         alongside the geometry so a re-render never hands Canvas a changed camera.
@@ -134,7 +180,7 @@ export function App({ frameloop = 'always', modelUrls }: AppProps = {}) {
           camera={camera}
           dpr={[1, 1.5]}
           frameloop={frameloop}
-          aria-label="3D 电子鱼缸，可拖动旋转视角并使用滚轮缩放"
+          aria-label={t('canvasLabel')}
           aria-describedby="control-hint"
           gl={{ antialias: true }}
           shadows="basic"
@@ -148,7 +194,7 @@ export function App({ frameloop = 'always', modelUrls }: AppProps = {}) {
         </Canvas>
       ) : (
         <div className="grid h-full w-full place-items-center p-8 text-center text-mist" role="status">
-          当前浏览器无法启用 WebGL，暂时无法显示电子鱼缸。
+          {t('webglUnavailable')}
         </div>
       )}
 
@@ -158,8 +204,9 @@ export function App({ frameloop = 'always', modelUrls }: AppProps = {}) {
           className="pointer-events-none absolute bottom-20 left-1/2 z-10 -translate-x-1/2 rounded-full border border-glass/24 bg-surface/80 px-4 py-2 text-sm text-mist backdrop-blur-md"
           role="alert"
         >
-          部分鱼模型加载失败：
-          {[...failedSpecies].map((species) => FISH_SPECIES[species].label).join('、')}
+          {t('modelFailure', {
+            fish: [...failedSpecies].map((species) => t(`fish.${species}`)),
+          })}
         </div>
       )}
 
@@ -168,10 +215,10 @@ export function App({ frameloop = 'always', modelUrls }: AppProps = {}) {
           PHASE 01
         </span>
         <h1 className="mt-[0.45rem] text-[clamp(2.2rem,4vw,4.6rem)] font-[520] tracking-[-0.055em] max-[720px]:text-[clamp(2rem,12vw,3.4rem)]">
-          电子鱼缸
+          {t('heading')}
         </h1>
         <p className="mt-[0.55rem] text-[0.95rem] tracking-[0.08em] text-mist max-[720px]:max-w-56 max-[720px]:text-[0.8rem]">
-          一片不需要照料的水下世界
+          {t('tagline')}
         </p>
       </header>
 
@@ -188,8 +235,12 @@ export function App({ frameloop = 'always', modelUrls }: AppProps = {}) {
         anywhere under the panels swings nothing.
       */}
       <div className="pointer-events-none absolute top-10 right-12 z-10 grid max-h-[calc(100%-130px)] w-[290px] content-start gap-3.5 [&>*]:pointer-events-auto max-[720px]:top-6 max-[720px]:right-4 max-[720px]:max-h-[calc(100%-150px)] max-[720px]:w-[min(290px,62vw)]">
-        <Panel aria-label="鱼缸尺寸选择" className="grid gap-1.5">
-          <PanelHeading id="tank-size-label">鱼缸尺寸</PanelHeading>
+        {/*
+          面板由自己那行小标题命名，而不是另写一份 aria-label：两处都要跟着语言翻，
+          分开写就会有一天只翻了一处，屏幕阅读器念的和屏幕上的字对不上。
+        */}
+        <Panel aria-labelledby="tank-size-label" className="grid gap-1.5">
+          <PanelHeading id="tank-size-label">{t('tank.heading')}</PanelHeading>
           <Select value={preset.id} onValueChange={(id) => chooseTank(getTankPreset(id).id)}>
             {/*
               The trigger is labelled by the heading above it rather than carrying
@@ -209,27 +260,34 @@ export function App({ frameloop = 'always', modelUrls }: AppProps = {}) {
               and 迷你缸 loses its top edge whenever 标准缸 or lower is chosen.
             */}
             <SelectContent align="start" position="popper">
-              {TANK_PRESETS.map(({ dimensions, id, label }) => (
+              {TANK_PRESETS.map(({ dimensions, id }) => (
                 <SelectItem key={id} value={id}>
-                  {label} · {dimensions.length} × {dimensions.width} × {dimensions.height} cm
+                  {t(`tanks.${id}`)} · {dimensions.length} × {dimensions.width} ×{' '}
+                  {dimensions.height} cm
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <output className="text-[0.78rem] tracking-[0.06em] text-mist">
-            约 {preset.volumeLiters} L
+            {t('tank.volume', { liters: preset.volumeLiters })}
           </output>
         </Panel>
 
         <FishMarket capacity={capacity} counts={counts} onAdd={add} onRemove={remove} />
       </div>
 
+      <LanguagePicker />
+
+      {/*
+        两半提示之间用不断行空格分隔：英文那版比中文长出一截，普通空格会让它在窄屏
+        上从中间断开，胶囊也就跟着散成两行。
+      */}
       <div
         id="control-hint"
-        aria-label="相机操作提示"
+        aria-label={t('camera.hintLabel')}
         className="pointer-events-none absolute right-12 bottom-9 z-10 rounded-full border border-glass/24 bg-surface/54 px-3.5 py-2.5 text-[0.76rem] tracking-[0.08em] text-mist backdrop-blur-md max-[720px]:right-4 max-[720px]:bottom-4"
       >
-        拖动旋转&nbsp;&nbsp;·&nbsp;&nbsp;滚轮缩放
+        {t('camera.drag')}&nbsp;&nbsp;·&nbsp;&nbsp;{t('camera.zoom')}
       </div>
     </main>
   )

@@ -4,9 +4,9 @@ export type TankDimensions = Readonly<{
   height: number
 }>
 
+/** 缸尺寸的名字在 src/i18n/locales/ 的语言包里按 id 列着，这份只管几何。 */
 export type TankPreset = Readonly<{
   id: 'nano' | 'small' | 'standard' | 'large' | 'xl'
-  label: string
   dimensions: TankDimensions
   /** Approximate gross capacity; substrate and equipment reduce usable volume. */
   volumeLiters: number
@@ -16,31 +16,26 @@ export const TANK_PRESETS = [
   {
     dimensions: { height: 20, length: 30, width: 20 },
     id: 'nano',
-    label: '迷你缸',
     volumeLiters: 12,
   },
   {
     dimensions: { height: 30, length: 45, width: 30 },
     id: 'small',
-    label: '小型缸',
     volumeLiters: 40.5,
   },
   {
     dimensions: { height: 36, length: 60, width: 30 },
     id: 'standard',
-    label: '标准缸',
     volumeLiters: 64.8,
   },
   {
     dimensions: { height: 45, length: 90, width: 45 },
     id: 'large',
-    label: '大型缸',
     volumeLiters: 182.25,
   },
   {
     dimensions: { height: 50, length: 120, width: 50 },
     id: 'xl',
-    label: '加大型',
     volumeLiters: 300,
   },
 ] as const satisfies readonly TankPreset[]

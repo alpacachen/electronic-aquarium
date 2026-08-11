@@ -16,18 +16,35 @@
  * 界面和缸里的水共用同一批值：点光源的蓝就是加载条的蓝，缸的底色就是页面的底色。
  * 所以颜色只在这里写一次，别处一律引用。
  *
- * 有三处读它，各有各的读法：
+ * 有两处读它，各有各的读法：
  *
- * 1. 面板和文字 —— Tailwind 由这些变量生成工具类（bg-abyss、text-mist……）。
+ * 1. 面板和文字 —— Tailwind 由这些变量生成工具类（bg-abyss、text-mist……）。加载幕布
+ *    也走这条，它就是个普通组件（src/aquarium/LoadingCurtain.tsx）。
  * 2. 缸里的场景 —— Three.js 的材质拿不到 CSS 变量，由 src/aquarium/palette.ts
  *    带一份同名的字面值过去；那份文件的注释里也写了这条对应关系。
- * 3. 加载幕布 —— 必须在第一帧就画出来，早于任何一个样式表请求，所以它在
- *    index.html 里内联，同样带着一份字面值。
  *
- * `pnpm check:colors` 在构建前核对三份映射，并拦截源码里未登记的十六进制颜色。
+ * 另有一处单值副本：index.html 里的 <meta name="theme-color">，浏览器要在 CSS 之前就
+ * 知道拿什么色画地址栏。
+ *
+ * `pnpm check:colors` 在构建前核对这几份映射，并拦截源码里未登记的十六进制颜色。
  */
 @theme {
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+
+  /*
+   * 加载条在拿到第一个 content-length 之前来回扫，拿到之后才按真实进度走。停在 0%
+   * 不动的条子读起来像卡住了。见 src/aquarium/LoadingCurtain.tsx。
+   */
+  --animate-loading-sweep: loading-sweep 1.25s ease-in-out infinite;
+
+  @keyframes loading-sweep {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(250%);
+    }
+  }
 
   /* 页面与场景的底色，也是雾的颜色 */
   --color-abyss: #061823;

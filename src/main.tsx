@@ -1,13 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
-import { startLoadingCurtain } from './aquarium/loadingCurtain'
+import { createI18n } from './i18n'
 import './styles.css'
 
-startLoadingCurtain()
+const i18n = createI18n()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <App i18n={i18n} />
   </StrictMode>,
 )

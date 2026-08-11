@@ -1,0 +1,48 @@
+{
+  "documentTitle": "Electronic Aquarium",
+  "heading": "Electronic Aquarium",
+  "tagline": "An underwater world that needs no looking after",
+  "canvasLabel": "3D aquarium; drag to rotate the view and scroll to zoom",
+  "webglUnavailable": "This browser cannot start WebGL, so the aquarium cannot be shown yet.",
+  "modelFailure": "Some fish models failed to load: {{fish, list}}",
+  "camera": {
+    "drag": "Drag to rotate",
+    "zoom": "Scroll to zoom",
+    "hintLabel": "Camera controls"
+  },
+  "languagePicker": {
+    "label": "Interface language"
+  },
+  "loading": {
+    "title": "Filling the tank",
+    "hint": "Putting the fish in",
+    "progressLabel": "Aquarium loading progress",
+    "timedOut": "Loading timed out; some fish models may be unavailable",
+    "partialFailure": "Some fish models failed to load; the aquarium still works"
+  },
+  "market": {
+    "heading": "Fish market",
+    "addOne": "Add one {{label, lowercase}}",
+    "removeOne": "Remove one {{label, lowercase}}",
+    "tally": "{{stocked}} in the tank · {{capacity}} max",
+    "tally_full": "{{stocked}} in the tank · {{capacity}} max · full"
+  },
+  "tank": {
+    "heading": "Tank size",
+    "volume": "About {{liters}} L"
+  },
+  "fish": {
+    "barramundi": "Barramundi",
+    "blueTang": "Blue tang",
+    "clownfish": "Clownfish",
+    "goldfish": "Goldfish",
+    "tuna": "Tuna"
+  },
+  "tanks": {
+    "nano": "Nano",
+    "small": "Small",
+    "standard": "Standard",
+    "large": "Large",
+    "xl": "Extra large"
+  }
+}
