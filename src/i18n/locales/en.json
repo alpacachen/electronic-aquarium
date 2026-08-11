@@ -34,8 +34,14 @@
   "fish": {
     "barramundi": "Barramundi",
     "blueTang": "Blue tang",
+    "armoredCatfish": "Armored catfish",
+    "parrotFish": "Parrotfish",
+    "betta": "Betta",
+    "cardinalFish": "Cardinalfish",
     "clownfish": "Clownfish",
+    "tetra": "Tetra",
     "goldfish": "Goldfish",
+    "mandarinFish": "Mandarinfish",
     "tuna": "Tuna"
   },
   "tanks": {
