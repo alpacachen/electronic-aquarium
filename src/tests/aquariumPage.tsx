@@ -150,7 +150,19 @@ export type RenderedTank = Readonly<{
  * 认的是它那行小标题的 id，而不是标题上的字：面板的名字跟着界面语言变，按字找就
  * 只在中文界面下找得到。
  */
-const marketPanel = () => document.querySelector('[aria-labelledby="fish-market-label"]')
+const marketPanel = () =>
+  document.querySelector<HTMLElement>('[aria-labelledby="fish-market-label"]')
+
+const visibleMarketPanel = () =>
+  [...document.querySelectorAll<HTMLElement>('[aria-labelledby="fish-market-label"]')].find(
+    (panel) =>
+      panel.getClientRects().length > 0 &&
+      panel.closest('[data-slot="drawer-content"]')?.getAttribute('data-state') !== 'closed',
+  ) ?? null
+
+const visibleTankOption = (option: Element) =>
+  option.getClientRects().length > 0 &&
+  option.closest('[data-slot="select-content"]')?.getAttribute('data-state') !== 'closed'
 
 /**
  * The 鱼市 tally line, e.g. 缸里 6 条 · 上限 8 条.
@@ -345,6 +357,13 @@ export async function openAquarium({
   const currentLanguage = (): Language => languageOf(live18n)
   const say = (key: string, values?: Record<string, unknown>) => live18n.t(key, values)
 
+  /** Opens the phone-only controls sheet when the current viewport uses it. */
+  const openControls = async () => {
+    const toggle = document.querySelector<HTMLButtonElement>('[aria-controls="aquarium-controls"]')
+    if (!toggle || toggle.getClientRects().length === 0 || toggle.ariaExpanded === 'true') return
+    await page.getByRole('button', { name: say('controls.open') }).click()
+  }
+
   /** Finds the live renderer without coupling tests to how the canvas is mounted. */
   const liveScene = async () => {
     const found = await vi.waitFor(
@@ -482,8 +501,22 @@ export async function openAquarium({
    * caller that read straight after the click would find an empty list.
    */
   const openSizePicker = async () => {
-    if (document.querySelector('[role="option"]')) return
-    await page.getByRole('combobox').click()
+    await openControls()
+    document.getElementById('aquarium-controls')?.scrollTo({ top: 0 })
+    if (
+      [...document.querySelectorAll('[role="option"]')].some(
+        visibleTankOption,
+      )
+    ) {
+      return
+    }
+    const combo = [...document.querySelectorAll('[role="combobox"]')].find(
+      (candidate) => candidate.getClientRects().length > 0,
+    )
+    if (!combo) {
+      throw new Error('The tank-size picker is not visible.')
+    }
+    await userEvent.click(combo)
     await vi.waitFor(
       () => {
         if (!document.querySelector('[role="option"]')) {
@@ -539,7 +572,7 @@ export async function openAquarium({
       return surface.getWorldPosition(new Vector3()).y
     },
 
-    capacity: () => page.getByRole('status'),
+    capacity: () => document.querySelector<HTMLOutputElement>('[id$="-tank-volume"]')!,
     heading: () => page.getByRole('heading', { level: 1 }),
     text: (content: string | RegExp) => page.getByText(content),
     loadingCurtain: () => document.getElementById('loading-curtain'),
@@ -569,6 +602,24 @@ export async function openAquarium({
       }
     },
     modelFailure: () => page.getByRole('alert'),
+
+    controls: () => ({
+      close: async () => {
+        const toggle = document.querySelector<HTMLButtonElement>(
+          '[aria-controls="aquarium-controls"]',
+        )
+        if (toggle?.getClientRects().length && toggle.ariaExpanded === 'true') {
+          await page.getByRole('button', { name: say('controls.close') }).click()
+        }
+      },
+      isOpen: () =>
+        document
+          .querySelector<HTMLButtonElement>('[aria-controls="aquarium-controls"]')
+          ?.getAttribute('aria-expanded') === 'true',
+      market: visibleMarketPanel,
+      open: openControls,
+      trigger: () => page.getByRole('button', { name: say('controls.open') }),
+    }),
 
     showWebGLFallback: async () => {
       const getContext = HTMLCanvasElement.prototype.getContext
@@ -603,6 +654,7 @@ export async function openAquarium({
        * over several frames, so returning any sooner would report a stale tank.
        */
       buy: async (label: string) => {
+        await openControls()
         const before = fishGroups().length
         await page.getByRole('button', { name: say('market.addOne', { label }) }).click()
         await settleFish(before + 1)
@@ -610,6 +662,7 @@ export async function openAquarium({
 
       /** Removes one fish of a species by clicking its − button. */
       sell: async (label: string) => {
+        await openControls()
         const before = fishGroups().length
         await page.getByRole('button', { name: say('market.removeOne', { label }) }).click()
         await settleFish(before - 1)
@@ -654,27 +707,48 @@ export async function openAquarium({
      * a set of `<option>` elements sitting in the page — so this opens it, reads
      * the rows and closes it again, leaving the page as it was found.
      */
-    offeredTankSizes: async () => {
-      await openSizePicker()
-      const offered = [...document.querySelectorAll('[role="option"]')].map(
-        (option) => option.textContent ?? '',
-      )
-      await userEvent.keyboard('{Escape}')
-      return offered
-    },
+  offeredTankSizes: async () => {
+    await openSizePicker()
+    const offered: string[] = []
+    document.querySelectorAll('[role="option"]').forEach((option) => {
+      if (visibleTankOption(option)) offered.push(option.textContent ?? '')
+    })
+    await userEvent.keyboard('{Escape}')
+    return offered
+  },
 
     /** Picks a tank by name, e.g. 迷你缸, and waits for the new scene. */
     chooseTankSize: async (name: string) => {
       await openSizePicker()
 
-      const option = [...document.querySelectorAll('[role="option"]')].find((candidate) =>
-        candidate.textContent?.startsWith(name),
+      const options = [...document.querySelectorAll('[role="option"]')].filter(
+        visibleTankOption,
       )
-      if (!option) {
+      const optionIndex = options.findIndex(
+        (candidate) =>
+          candidate.textContent?.startsWith(name),
+      )
+      if (optionIndex < 0) {
         throw new Error(`The dropdown offers no tank called ${name}.`)
       }
 
-      await page.getByRole('option', { name: option.textContent! }).click()
+      await userEvent.keyboard('{Home}')
+      for (let step = 0; step < optionIndex; step += 1) {
+        await userEvent.keyboard('{ArrowDown}')
+      }
+      await userEvent.keyboard('{Enter}')
+      await vi.waitFor(
+        () => {
+          if (
+            [...document.querySelectorAll('[role="option"]')].some(
+              visibleTankOption,
+            )
+          ) {
+            throw new Error('The tank-size dropdown is still closing.')
+          }
+        },
+        { interval: 10, timeout: 2000 },
+      )
       await liveScene()
       elapsed = 0
       letTimePass(FRAME_SECONDS)

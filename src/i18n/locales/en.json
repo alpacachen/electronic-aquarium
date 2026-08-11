@@ -5,6 +5,11 @@
   "canvasLabel": "3D aquarium; drag to rotate the view and scroll to zoom",
   "webglUnavailable": "This browser cannot start WebGL, so the aquarium cannot be shown yet.",
   "modelFailure": "Some fish models failed to load: {{fish, list}}",
+  "controls": {
+    "open": "Controls",
+    "close": "Close",
+    "heading": "Controls"
+  },
   "camera": {
     "drag": "Drag to rotate",
     "zoom": "Scroll to zoom",

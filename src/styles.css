@@ -178,7 +178,8 @@
 
   body {
     /* 缸是横着看的，1024 以下由下面的响应式类各自收窄，不再压缩布局 */
-    @apply min-w-256 overflow-hidden bg-background font-sans text-foreground antialiased;
+    /* Drawer 的 iOS Safari overlay 需要 positioned body 才能覆盖滚动视口。 */
+    @apply relative min-w-256 overflow-hidden bg-background font-sans text-foreground antialiased;
   }
 
   @media (width <= 720px) {
