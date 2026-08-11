@@ -1,7 +1,8 @@
-import { Edges, OrbitControls } from '@react-three/drei'
+import { Edges, OrbitControls, SpotLight } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
-import { Suspense, useEffect, useLayoutEffect } from 'react'
-import { BackSide, DoubleSide } from 'three'
+import { Suspense, useEffect, useLayoutEffect, useRef } from 'react'
+import { BackSide, DoubleSide, Quaternion, Vector3 } from 'three'
+import type { Object3D, SpotLight as SpotLightImpl } from 'three'
 import { PALETTE } from './palette'
 import { Fish, FishErrorBoundary } from './Fish'
 import { FISH_SPECIES } from './fishSpecies'
@@ -94,6 +95,129 @@ function Water({ geometry }: { geometry: TankSceneGeometry }) {
   )
 }
 
+/** The lamp doesn't take viewer input, so its color and output are fixed. */
+const LAMP_COLOR = PALETTE.LAMP
+const LAMP_STRENGTH = 0.7
+
+/**
+ * A box mesh's local Y axis stretched between two points, for arm segments
+ * whose only job is to visually connect a clamp to the lamp head. `length` is
+ * measured along that axis, so callers hand it a thickness for the other two.
+ */
+function strutBetween(from: Vector3, to: Vector3) {
+  const delta = to.clone().sub(from)
+  const length = delta.length()
+  const quaternion = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), delta.normalize())
+  return { position: from.clone().addScaledVector(delta.normalize(), length / 2), quaternion, length }
+}
+
+/**
+ * The clamp lamp's shape, in world space. Shared by the visible fixture and
+ * the volumetric cone so the beam always originates exactly at the bulb.
+ */
+function lampFixture(geometry: TankSceneGeometry) {
+  const rimY = geometry.size.height / 2
+  const clampPos = new Vector3(geometry.size.length / 2 - 0.05, rimY, geometry.size.depth / 2 - 0.05)
+  const postTop = clampPos.clone().add(new Vector3(0, 0.45, 0))
+  const armEnd = new Vector3(0, rimY + 0.6, 0)
+  const aimTarget = new Vector3(0, geometry.fishCenterY, 0)
+  const aimDir = aimTarget.clone().sub(armEnd).normalize()
+
+  const shadeHeight = 0.26
+  const headCenter = armEnd.clone().addScaledVector(aimDir, shadeHeight / 2)
+  const headQuaternion = new Quaternion().setFromUnitVectors(new Vector3(0, -1, 0), aimDir)
+  const bulbCenter = armEnd.clone().addScaledVector(aimDir, shadeHeight * 0.85)
+
+  return {
+    aimTarget,
+    bulbCenter,
+    headCenter,
+    headQuaternion,
+    post: strutBetween(clampPos, postTop),
+    arm: strutBetween(postTop, armEnd),
+    clampPos,
+    shadeHeight,
+  }
+}
+
+/**
+ * A clamp lamp gripping the tank's front-right rim, its arm reaching in over
+ * the water so the head can rake light across the tank at an angle instead of
+ * flooding it from directly overhead — that angle is what reads as a real
+ * light source rather than a flat fill.
+ */
+function Lamp({ fixture }: { fixture: ReturnType<typeof lampFixture> }) {
+  const spotRef = useRef<SpotLightImpl>(null)
+  const targetRef = useRef<Object3D>(null)
+
+  useLayoutEffect(() => {
+    if (spotRef.current && targetRef.current) {
+      spotRef.current.target = targetRef.current
+    }
+  })
+
+  const { aimTarget, bulbCenter, headCenter, headQuaternion, post, arm, clampPos, shadeHeight } = fixture
+
+  /**
+   * Physical light units make a point/spot light this close to its target
+   * blow out to solid white well before intensity reaches high values — the
+   * decay is a squared falloff over a distance of about one world unit.
+   * This intensity was tuned by eye against the tank's own scale rather than
+   * derived from a formula.
+   */
+  const intensity = 2.5 + LAMP_STRENGTH * 8
+  const beamDistance = bulbCenter.distanceTo(aimTarget) * 1.2
+
+  return (
+    <group userData={{ aquariumLamp: true }}>
+      <SpotLight
+        ref={spotRef}
+        angle={0.62}
+        anglePower={4}
+        attenuation={beamDistance * 0.75}
+        castShadow
+        color={LAMP_COLOR}
+        decay={2}
+        distance={beamDistance}
+        intensity={intensity}
+        opacity={0.16 + LAMP_STRENGTH * 0.3}
+        penumbra={0.5}
+        position={bulbCenter}
+        radiusBottom={beamDistance * Math.tan(0.62)}
+        radiusTop={0.015}
+        userData={{ aquariumLampLight: true }}
+      />
+      <object3D ref={targetRef} position={aimTarget} />
+
+      <mesh position={clampPos}>
+        <boxGeometry args={[0.16, 0.22, 0.16]} />
+        <meshStandardMaterial color={PALETTE.CABINET} roughness={0.4} />
+      </mesh>
+      <mesh position={post.position} quaternion={post.quaternion}>
+        <cylinderGeometry args={[0.035, 0.035, post.length, 12]} />
+        <meshStandardMaterial color={PALETTE.CABINET} roughness={0.4} />
+      </mesh>
+      <mesh position={arm.position} quaternion={arm.quaternion}>
+        <cylinderGeometry args={[0.035, 0.035, arm.length, 12]} />
+        <meshStandardMaterial color={PALETTE.CABINET} roughness={0.4} />
+      </mesh>
+
+      {/*
+        Open at the bottom (openEnded) so the bulb inside stays visible instead
+        of being capped by the shade's own base.
+      */}
+      <mesh castShadow position={headCenter} quaternion={headQuaternion}>
+        <coneGeometry args={[0.16, shadeHeight, 24, 1, true]} />
+        <meshStandardMaterial color={PALETTE.CABINET} roughness={0.35} side={DoubleSide} />
+      </mesh>
+      <mesh position={bulbCenter} quaternion={headQuaternion}>
+        <sphereGeometry args={[0.05, 16, 16]} />
+        <meshStandardMaterial color={LAMP_COLOR} emissive={LAMP_COLOR} emissiveIntensity={LAMP_STRENGTH} />
+      </mesh>
+    </group>
+  )
+}
+
 /**
  * Frames a newly chosen tank, then leaves the camera to the viewer.
  *
@@ -149,6 +273,8 @@ export function Aquarium({
   modelUrls?: Partial<Record<FishSpeciesId, string>>
   onFishError(species: FishSpeciesId): void
 }) {
+  const fixture = lampFixture(geometry)
+
   return (
     <>
       <AquariumProbe geometry={geometry} />
@@ -161,18 +287,13 @@ export function Aquarium({
           geometry.camera.maxDistance * 2.2,
         ]}
       />
-      <ambientLight intensity={1.2} />
+      <ambientLight intensity={1.1} />
       <directionalLight
-        castShadow
         color={PALETTE.SUNLIGHT}
-        intensity={3.4}
+        intensity={2.4}
         position={[geometry.size.length * 0.6, geometry.size.height * 1.7, geometry.size.depth * 1.6]}
       />
-      <pointLight
-        color={PALETTE.LAMP}
-        intensity={22}
-        position={[-geometry.size.length * 0.5, geometry.fishCenterY, geometry.size.depth * 0.4]}
-      />
+      <Lamp fixture={fixture} />
 
       {/*
         makeDefault publishes the controls on the scene state, which is how the
