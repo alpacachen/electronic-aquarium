@@ -36,12 +36,25 @@ type AppProps = {
    * clock to the caller, which lets tests advance time on their own terms.
    */
   frameloop?: 'always' | 'never'
+  modelUrls?: Partial<Record<FishSpeciesId, string>>
 }
 
-export function App({ frameloop = 'always' }: AppProps = {}) {
+function canUseWebGL() {
+  try {
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('webgl2') || canvas.getContext('webgl')
+    context?.getExtension('WEBGL_lose_context')?.loseContext()
+    return Boolean(context)
+  } catch {
+    return false
+  }
+}
+
+export function App({ frameloop = 'always', modelUrls }: AppProps = {}) {
   const [tankId, setTankId] = useState<TankPresetId>(DEFAULT_TANK_ID)
   const [counts, setCounts] = useState(DEFAULT_STOCK)
   const [failedSpecies, setFailedSpecies] = useState<ReadonlySet<FishSpeciesId>>(new Set())
+  const [webglAvailable] = useState(canUseWebGL)
   const preset = getTankPreset(tankId)
   /**
    * Derived only when the tank changes. The scene reads the camera's framing out
@@ -116,22 +129,28 @@ export function App({ frameloop = 'always' }: AppProps = {}) {
         it belongs to the viewer and the rig inside the scene. They are derived
         alongside the geometry so a re-render never hands Canvas a changed camera.
       */}
-      <Canvas
-        camera={camera}
-        dpr={[1, 1.5]}
-        frameloop={frameloop}
-        aria-label="3D 电子鱼缸，可拖动旋转视角并使用滚轮缩放"
-        aria-describedby="control-hint"
-        fallback={
-          <div className="grid h-full w-full place-items-center p-8 text-center text-mist">
-            当前浏览器无法启用 WebGL，暂时无法显示电子鱼缸。
-          </div>
-        }
-        gl={{ antialias: true }}
-        shadows="basic"
-      >
-        <Aquarium fish={fish} geometry={geometry} onFishError={reportFishError} />
-      </Canvas>
+      {webglAvailable ? (
+        <Canvas
+          camera={camera}
+          dpr={[1, 1.5]}
+          frameloop={frameloop}
+          aria-label="3D 电子鱼缸，可拖动旋转视角并使用滚轮缩放"
+          aria-describedby="control-hint"
+          gl={{ antialias: true }}
+          shadows="basic"
+        >
+          <Aquarium
+            fish={fish}
+            geometry={geometry}
+            modelUrls={modelUrls}
+            onFishError={reportFishError}
+          />
+        </Canvas>
+      ) : (
+        <div className="grid h-full w-full place-items-center p-8 text-center text-mist" role="status">
+          当前浏览器无法启用 WebGL，暂时无法显示电子鱼缸。
+        </div>
+      )}
 
       {failedSpecies.size > 0 && (
         <div
