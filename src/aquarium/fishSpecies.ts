@@ -13,6 +13,8 @@ const modelUrl = (path: string) => `${import.meta.env.BASE_URL}models/${path}`
 export type FishSpecies = Readonly<{
   animation?: Readonly<{ name: string; speed: number }>
   centerY: number
+  /** Multiplies the source material color when an asset is unusually dark. */
+  brightness?: number
   modelUrl: string
   /** What the species reads like in the water, before individual variation. */
   temperament: Readonly<{
@@ -69,8 +71,8 @@ export const FISH_SPECIES = {
   },
   armoredCatfish: {
     animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.3 },
+    brightness: 8,
     centerY: 0.1,
-    label: '装甲鲶鱼',
     modelUrl: modelUrl('armored-catfish/armored-catfish.glb'),
     rotationY: Math.PI / 2,
     temperament: { depth: -0.2, period: 58, speed: 0.52, surge: 0.18 },
@@ -78,8 +80,8 @@ export const FISH_SPECIES = {
   },
   parrotFish: {
     animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.5 },
+    brightness: 4,
     centerY: 0.29,
-    label: '鹦嘴鱼',
     modelUrl: modelUrl('parrot-fish/parrot-fish.glb'),
     rotationY: Math.PI / 2,
     temperament: { depth: 0.15, period: 54, speed: 0.63, surge: 0.24 },
@@ -87,8 +89,8 @@ export const FISH_SPECIES = {
   },
   betta: {
     animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.2 },
+    brightness: 4,
     centerY: -0.04,
-    label: '斗鱼',
     modelUrl: modelUrl('betta/betta.glb'),
     rotationY: Math.PI / 2,
     temperament: { depth: 0.25, period: 48, speed: 0.45, surge: 0.22 },
@@ -96,8 +98,8 @@ export const FISH_SPECIES = {
   },
   cardinalFish: {
     animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.7 },
+    brightness: 5,
     centerY: -0.02,
-    label: '天竺鲷',
     modelUrl: modelUrl('cardinal-fish/cardinal-fish.glb'),
     rotationY: Math.PI / 2,
     temperament: { depth: -0.05, period: 60, speed: 0.62, surge: 0.28 },
@@ -114,8 +116,8 @@ export const FISH_SPECIES = {
   },
   tetra: {
     animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.9 },
+    brightness: 5,
     centerY: -0.02,
-    label: '脂鲤',
     modelUrl: modelUrl('tetra/tetra.glb'),
     rotationY: Math.PI / 2,
     temperament: { depth: 0, period: 50, speed: 0.7, surge: 0.32 },
@@ -132,8 +134,8 @@ export const FISH_SPECIES = {
   },
   mandarinFish: {
     animation: { name: 'Fish_Armature|Swimming_Normal', speed: 1.4 },
+    brightness: 4,
     centerY: 0.02,
-    label: '麒麟鱼',
     modelUrl: modelUrl('mandarin-fish/mandarin-fish.glb'),
     rotationY: Math.PI / 2,
     temperament: { depth: -0.1, period: 62, speed: 0.5, surge: 0.28 },
