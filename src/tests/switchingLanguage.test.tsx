@@ -25,8 +25,14 @@ describe('中英文切换', () => {
     expect(aquarium.market().offered()).toEqual([
       'Barramundi',
       'Blue tang',
+      'Armored catfish',
+      'Parrotfish',
+      'Betta',
+      'Cardinalfish',
       'Clownfish',
+      'Tetra',
       'Goldfish',
+      'Mandarinfish',
       'Tuna',
     ])
     expect(aquarium.market().tally()).toBe('6 in the tank · 8 max')
@@ -63,8 +69,14 @@ describe('中英文切换', () => {
     expect(aquarium.market().offered()).toEqual([
       '尖吻鲈',
       '蓝刀鲷',
+      '装甲鲶鱼',
+      '鹦嘴鱼',
+      '斗鱼',
+      '天竺鲷',
       '小丑鱼',
+      '脂鲤',
       '金鱼',
+      '麒麟鱼',
       '金枪鱼',
     ])
     expect(aquarium.market().tally()).toBe('缸里 6 条 · 上限 8 条')

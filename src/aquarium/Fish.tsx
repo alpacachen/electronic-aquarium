@@ -95,6 +95,14 @@ export function Fish({ bounds, modelScale, modelUrl, seed, species, speciesId }:
       mesh.material = Array.isArray(mesh.material)
         ? mesh.material.map((material) => material.clone())
         : mesh.material.clone()
+      if (species.brightness) {
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+        materials.forEach((material) => {
+          if (material instanceof MeshStandardMaterial) {
+            material.color.multiplyScalar(species.brightness!)
+          }
+        })
+      }
     })
     return copy
   }, [scene])

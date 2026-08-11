@@ -110,8 +110,14 @@ curl -sL "https://poly.pizza/m/<模型 id>" | grep -oE 'https://static\.poly\.pi
 | 小丑鱼 | Quaternius · [Poly Pizza](https://poly.pizza/m/BEcU9rjiAq) | CC0 | `Armature\|Swim` | 82 KB |
 | 金枪鱼 | Quaternius · [Poly Pizza](https://poly.pizza/m/XWl86YFtpF) | CC0 | `Armature\|Swim` | 70 KB |
 | 蓝刀鲷 | Quaternius · [Poly Pizza](https://poly.pizza/m/Ymu8ftrmuT) | CC0 | `Armature\|Swim.001` | 64 KB |
+| 装甲鲶鱼 | Quaternius · [Poly Pizza](https://poly.pizza/m/mtd9QK5yCe) | CC0 | `Fish_Armature\|Swimming_Normal` | 155 KB |
+| 鹦嘴鱼 | Quaternius · [Poly Pizza](https://poly.pizza/m/lj0WFfJkbb) | CC0 | `Fish_Armature\|Swimming_Normal` | 146 KB |
+| 斗鱼 | Quaternius · [Poly Pizza](https://poly.pizza/m/Vg8IlYjdZi) | CC0 | `Fish_Armature\|Swimming_Normal` | 153 KB |
+| 天竺鲷 | Quaternius · [Poly Pizza](https://poly.pizza/m/YyZyVhg2Jq) | CC0 | `Fish_Armature\|Swimming_Normal` | 147 KB |
+| 脂鲤 | Quaternius · [Poly Pizza](https://poly.pizza/m/l6AhogdZHe) | CC0 | `Fish_Armature\|Swimming_Normal` | 182 KB |
+| 麒麟鱼 | Quaternius · [Poly Pizza](https://poly.pizza/m/h6M5zlF5Yx) | CC0 | `Fish_Armature\|Swimming_Normal` | 177 KB |
 
-金鱼是唯一需要署名的资源，其余为 CC0。三个 Quaternius 模型无贴图、纯色 PBR 材质，
+金鱼是唯一需要署名的资源，其余为 CC0。九个 Quaternius 模型无贴图、纯色 PBR 材质，
 都是头朝 +Z，`rotationY` 取 `Math.PI / 2`。
 
 同一批 Poly Pizza 资源里还有鲨鱼、海豚、鲸鱼和魟鱼（同为 CC0），想继续扩缸可以直接取用；

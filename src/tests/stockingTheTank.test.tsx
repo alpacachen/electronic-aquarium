@@ -12,12 +12,18 @@ describe('逛鱼市', () => {
 
   it('把可以养的鱼都摆出来', () => {
     // When 观众看向鱼市
-    // Then 五种鱼都在架上，各自写着名字
+    // Then 鱼市把现有鱼种都摆出来，各自写着名字
     expect(aquarium.market().offered()).toEqual([
       '尖吻鲈',
       '蓝刀鲷',
+      '装甲鲶鱼',
+      '鹦嘴鱼',
+      '斗鱼',
+      '天竺鲷',
       '小丑鱼',
+      '脂鲤',
       '金鱼',
+      '麒麟鱼',
       '金枪鱼',
     ])
   })
@@ -80,6 +86,15 @@ describe('逛鱼市', () => {
       expect(position).not.toEqual(before[index]!.position)
     })
     expect(Math.max(...seen.map(({ maxY, minY }) => maxY - minY))).toBeGreaterThan(0.1)
+  })
+
+  it('新加入的普通体型鱼也会播放游泳动画', async () => {
+    await aquarium.market().buy('天竺鲷')
+    aquarium.letTimePass(1)
+
+    const fish = aquarium.fish().find(({ species }) => species === 'cardinalFish')
+    expect(fish).toBeDefined()
+    expect(fish!.animationTime).toBeGreaterThan(0)
   })
 
   it('养满了就不让再往里加', async () => {
