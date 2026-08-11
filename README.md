@@ -73,6 +73,9 @@ Chromium 里（Vitest browser mode）：渲染整个应用、操作页面上的�
 同理，交互测试文件是串行跑的（`fileParallelism: false`）：每个文件都要驱动自己的
 WebGL 画布，几个文件一起抢同一个软件光栅化器时，单独都能过的用例反而会集体超时。
 
+最近一次测试耗时基线、优化记录和合并测试的边界见
+[docs/test-performance.md](docs/test-performance.md)。
+
 测试日志只留我们能动手改的东西。依赖自己打的过时警告（比如 fiber 9 每建一个画布就
 建一个已废弃的 `THREE.Clock`）由 `src/tests/quietDependencyWarnings.ts` 按整条
 消息滤掉，别的警告照旧打出来。要静音新的一条，往那份清单里加，并写清为什么我们改不动。
