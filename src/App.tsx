@@ -10,6 +10,7 @@ import {
 import { Aquarium } from './aquarium/Aquarium'
 import { FishMarket } from './aquarium/FishMarket'
 import { Panel, PanelHeading } from './aquarium/Panel'
+import { FISH_SPECIES } from './aquarium/fishSpecies'
 import type { FishSpeciesId } from './aquarium/fishSpecies'
 import { stockTank, stockingCapacity } from './aquarium/stocking'
 import {
@@ -40,6 +41,7 @@ type AppProps = {
 export function App({ frameloop = 'always' }: AppProps = {}) {
   const [tankId, setTankId] = useState<TankPresetId>(DEFAULT_TANK_ID)
   const [counts, setCounts] = useState(DEFAULT_STOCK)
+  const [failedSpecies, setFailedSpecies] = useState<ReadonlySet<FishSpeciesId>>(new Set())
   const preset = getTankPreset(tankId)
   /**
    * Derived only when the tank changes. The scene reads the camera's framing out
@@ -73,6 +75,12 @@ export function App({ frameloop = 'always' }: AppProps = {}) {
       if (count === 0) return current
       return { ...current, [species]: count - 1 }
     })
+  }
+
+  const reportFishError = (species: FishSpeciesId) => {
+    setFailedSpecies((current) =>
+      current.has(species) ? current : new Set(current).add(species),
+    )
   }
 
   /**
@@ -122,8 +130,19 @@ export function App({ frameloop = 'always' }: AppProps = {}) {
         gl={{ antialias: true }}
         shadows="basic"
       >
-        <Aquarium fish={fish} geometry={geometry} />
+        <Aquarium fish={fish} geometry={geometry} onFishError={reportFishError} />
       </Canvas>
+
+      {failedSpecies.size > 0 && (
+        <div
+          aria-live="polite"
+          className="pointer-events-none absolute bottom-20 left-1/2 z-10 -translate-x-1/2 rounded-full border border-glass/24 bg-surface/80 px-4 py-2 text-sm text-mist backdrop-blur-md"
+          role="alert"
+        >
+          部分鱼模型加载失败：
+          {[...failedSpecies].map((species) => FISH_SPECIES[species].label).join('、')}
+        </div>
+      )}
 
       <header className="pointer-events-none absolute top-10 left-12 z-10 [text-shadow:0_2px_24px_--alpha(#000a12/70%)] max-[720px]:top-6 max-[720px]:left-6">
         <span className="text-[0.7rem] font-bold tracking-[0.24em] text-lagoon">

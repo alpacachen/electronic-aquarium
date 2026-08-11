@@ -1,11 +1,13 @@
-import { Edges, OrbitControls } from '@react-three/drei'
+import { Edges, OrbitControls, useProgress } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
-import { useLayoutEffect } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useRef } from 'react'
 import { BackSide, DoubleSide } from 'three'
 import { PALETTE } from './palette'
-import { Fish } from './Fish'
+import { Fish, FishErrorBoundary } from './Fish'
 import { FISH_SPECIES } from './fishSpecies'
+import type { FishSpeciesId } from './fishSpecies'
 import type { FishSeed } from './fishSimulation'
+import { liftLoadingCurtain } from './loadingCurtain'
 import type { StockedFish } from './stocking'
 import type { TankSceneGeometry } from './tankPresets'
 
@@ -125,15 +127,30 @@ function CameraRig({ geometry }: { geometry: TankSceneGeometry }) {
   return null
 }
 
+function LoadingCurtainBridge() {
+  const { active, errors, progress, total } = useProgress()
+  const started = useRef(false)
+
+  useEffect(() => {
+    if (active || total > 0) started.current = true
+    if (started.current && !active) liftLoadingCurtain(progress, errors)
+  }, [active, errors, progress, total])
+
+  return null
+}
+
 export function Aquarium({
   fish,
   geometry,
+  onFishError,
 }: {
   fish: readonly StockedFish[]
   geometry: TankSceneGeometry
+  onFishError(species: FishSpeciesId): void
 }) {
   return (
     <>
+      <LoadingCurtainBridge />
       <color attach="background" args={[PALETTE.ABYSS]} />
       <fog
         attach="fog"
@@ -178,14 +195,17 @@ export function Aquarium({
 
       <group position={[0, geometry.fishCenterY, 0]}>
         {fish.map(({ id, species, ...seed }) => (
-          <Fish
-            bounds={geometry.fishBounds}
-            key={id}
-            modelScale={geometry.fishScale}
-            seed={scaleFishSeed(seed, geometry)}
-            species={FISH_SPECIES[species]}
-            speciesId={species}
-          />
+          <FishErrorBoundary key={id} onError={() => onFishError(species)}>
+            <Suspense fallback={null}>
+              <Fish
+                bounds={geometry.fishBounds}
+                modelScale={geometry.fishScale}
+                seed={scaleFishSeed(seed, geometry)}
+                species={FISH_SPECIES[species]}
+                speciesId={species}
+              />
+            </Suspense>
+          </FishErrorBoundary>
         ))}
       </group>
 
