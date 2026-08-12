@@ -563,6 +563,27 @@ export async function openAquarium({
       position: () => lampLight().getWorldPosition(new Vector3()),
     }),
 
+    airPump: () => {
+      let body: Object3D | undefined
+      let stone: Object3D | undefined
+      let tube: Object3D | undefined
+      const bubbles: Object3D[] = []
+      live().scene.traverse((object) => {
+        if (object.userData.aquariumAirPump === true) body = object
+        if (object.userData.aquariumAirStone === true) stone = object
+        if (object.userData.aquariumAirTube === true) tube = object
+        if (object.userData.aquariumBubble === true) bubbles.push(object)
+      })
+      if (!body || !stone || !tube) throw new Error('The aquarium has no complete air pump.')
+      const tubeBounds = new Box3().setFromObject(tube)
+      return {
+        body: body.getWorldPosition(new Vector3()),
+        bubbles: bubbles.map((bubble) => bubble.getWorldPosition(new Vector3())),
+        stone: stone.getWorldPosition(new Vector3()),
+        tube: { max: tubeBounds.max.clone(), min: tubeBounds.min.clone() },
+      }
+    },
+
     waterSurface: () => {
       let surface: Object3D | undefined
       live().scene.traverse((object) => {

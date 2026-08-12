@@ -1,7 +1,7 @@
 import { Edges, OrbitControls, SpotLight } from '@react-three/drei'
-import { useThree } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Suspense, useEffect, useLayoutEffect, useRef } from 'react'
-import { BackSide, DoubleSide, Quaternion, Vector3 } from 'three'
+import { BackSide, CatmullRomCurve3, DoubleSide, Quaternion, Vector3 } from 'three'
 import type { Object3D, SpotLight as SpotLightImpl } from 'three'
 import { PALETTE } from './palette'
 import { Fish, FishErrorBoundary } from './Fish'
@@ -218,6 +218,138 @@ function Lamp({ fixture }: { fixture: ReturnType<typeof lampFixture> }) {
   )
 }
 
+function airPumpFixture(geometry: TankSceneGeometry) {
+  const sideX = geometry.size.length / 2
+  const rimY = geometry.size.height / 2
+  const topOfSubstrate = geometry.substrate.y + geometry.substrate.height / 2
+  const z = geometry.size.depth * 0.18
+  const pump = new Vector3(sideX + 0.34, rimY - 0.5, z)
+  const diffuser = new Vector3(sideX * 0.28, topOfSubstrate + 0.07, z)
+  const outlet = pump.clone().add(new Vector3(-0.3, 0.2, 0))
+  const tube = new CatmullRomCurve3([
+    outlet,
+    new Vector3(sideX + 0.12, rimY + 0.14, z),
+    new Vector3(sideX - 0.16, rimY + 0.08, z),
+    new Vector3(sideX - 0.2, diffuser.y + 0.5, z),
+    diffuser.clone().add(new Vector3(0, 0.08, 0)),
+  ])
+  return { diffuser, outlet, pump, rimY, sideX, tube }
+}
+
+const BUBBLES = Array.from({ length: 18 }, (_, index) => {
+  const noise = (salt: number) => {
+    const mixed = Math.sin((index + 1) * 127.1 + salt * 311.7) * 43758.5453
+    return mixed - Math.floor(mixed)
+  }
+  return {
+    phase: noise(1),
+    radius: 0.025 + noise(2) * 0.035,
+    speed: 0.08 + noise(3) * 0.06,
+    x: noise(4) * 2 - 1,
+    z: noise(5) * 2 - 1,
+  }
+})
+
+function Bubbles({ diffuser, surfaceY }: { diffuser: Vector3; surfaceY: number }) {
+  const refs = useRef<Array<Object3D | null>>([])
+
+  useFrame(({ clock }) => {
+    BUBBLES.forEach((bubble, index) => {
+      const object = refs.current[index]
+      if (!object) return
+      const progress = (bubble.phase + clock.elapsedTime * bubble.speed) % 1
+      const spread = 0.08 + progress * 0.18
+      object.position.set(
+        diffuser.x + bubble.x * spread + Math.sin(clock.elapsedTime * 2 + index) * 0.025,
+        diffuser.y + 0.1 + progress * (surfaceY - diffuser.y - 0.18),
+        diffuser.z + bubble.z * spread,
+      )
+    })
+  })
+
+  return (
+    <group userData={{ aquariumBubbles: true }}>
+      {BUBBLES.map((bubble, index) => (
+        <mesh
+          key={index}
+          position={[
+            diffuser.x + bubble.x * (0.08 + bubble.phase * 0.18) + Math.sin(index) * 0.025,
+            diffuser.y + 0.1 + bubble.phase * (surfaceY - diffuser.y - 0.18),
+            diffuser.z + bubble.z * (0.08 + bubble.phase * 0.18),
+          ]}
+          ref={(object) => {
+            refs.current[index] = object
+          }}
+          scale={bubble.radius}
+          userData={{ aquariumBubble: true }}
+        >
+          <sphereGeometry args={[1, 10, 8]} />
+          <meshPhysicalMaterial
+            color={PALETTE.PANE}
+            depthWrite={false}
+            opacity={0.58}
+            roughness={0}
+            transparent
+            transmission={0.4}
+          />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+function AirPump({
+  fixture,
+  surfaceY,
+}: {
+  fixture: ReturnType<typeof airPumpFixture>
+  surfaceY: number
+}) {
+  const { diffuser, outlet, pump, rimY, sideX, tube } = fixture
+
+  return (
+    <group>
+      <group position={pump} userData={{ aquariumAirPump: true }}>
+        <mesh castShadow>
+          <boxGeometry args={[0.58, 0.82, 0.56]} />
+          <meshStandardMaterial color={PALETTE.CABINET} roughness={0.45} />
+        </mesh>
+        <mesh position={[0.3, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+          <cylinderGeometry args={[0.14, 0.14, 0.025, 20]} />
+          <meshStandardMaterial color={PALETTE.PANE_EDGE} roughness={0.35} />
+        </mesh>
+      </group>
+
+      <mesh position={[sideX + 0.05, rimY - 0.22, pump.z]}>
+        <boxGeometry args={[0.12, 0.44, 0.18]} />
+        <meshStandardMaterial color={PALETTE.CABINET} roughness={0.45} />
+      </mesh>
+      <mesh position={outlet} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.055, 0.055, 0.12, 12]} />
+        <meshStandardMaterial color={PALETTE.PANE_EDGE} roughness={0.25} />
+      </mesh>
+
+      <mesh userData={{ aquariumAirTube: true }}>
+        <tubeGeometry args={[tube, 48, 0.025, 8, false]} />
+        <meshPhysicalMaterial
+          color={PALETTE.PANE}
+          depthWrite={false}
+          opacity={0.48}
+          roughness={0}
+          transparent
+          transmission={0.5}
+        />
+      </mesh>
+
+      <mesh position={diffuser} userData={{ aquariumAirStone: true }}>
+        <cylinderGeometry args={[0.28, 0.28, 0.08, 24]} />
+        <meshStandardMaterial color={PALETTE.PANE_EDGE} roughness={0.85} />
+      </mesh>
+      <Bubbles diffuser={diffuser} surfaceY={surfaceY} />
+    </group>
+  )
+}
+
 /**
  * Frames a newly chosen tank, then leaves the camera to the viewer.
  *
@@ -274,6 +406,7 @@ export function Aquarium({
   onFishError(species: FishSpeciesId): void
 }) {
   const fixture = lampFixture(geometry)
+  const airPump = airPumpFixture(geometry)
 
   return (
     <>
@@ -294,6 +427,7 @@ export function Aquarium({
         position={[geometry.size.length * 0.6, geometry.size.height * 1.7, geometry.size.depth * 1.6]}
       />
       <Lamp fixture={fixture} />
+      <AirPump fixture={airPump} surfaceY={geometry.water.surfaceY} />
 
       {/*
         makeDefault publishes the controls on the scene state, which is how the
