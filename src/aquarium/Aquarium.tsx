@@ -244,55 +244,85 @@ const BUBBLES = Array.from({ length: 18 }, (_, index) => {
   return {
     phase: noise(1),
     radius: 0.025 + noise(2) * 0.035,
-    speed: 0.08 + noise(3) * 0.06,
+    speed: 0.18 + noise(3) * 0.12,
     x: noise(4) * 2 - 1,
     z: noise(5) * 2 - 1,
   }
 })
 
+const RIPPLE_LIFETIME = 0.9
+
 function Bubbles({ diffuser, surfaceY }: { diffuser: Vector3; surfaceY: number }) {
   const refs = useRef<Array<Object3D | null>>([])
+  const rippleRefs = useRef<Array<Object3D | null>>([])
 
   useFrame(({ clock }) => {
     BUBBLES.forEach((bubble, index) => {
       const object = refs.current[index]
+      const ripple = rippleRefs.current[index]
       if (!object) return
-      const progress = (bubble.phase + clock.elapsedTime * bubble.speed) % 1
+      const cycle = bubble.phase + clock.elapsedTime * bubble.speed
+      const progress = cycle % 1
       const spread = 0.08 + progress * 0.18
       object.position.set(
         diffuser.x + bubble.x * spread + Math.sin(clock.elapsedTime * 2 + index) * 0.025,
-        diffuser.y + 0.1 + progress * (surfaceY - diffuser.y - 0.18),
+        diffuser.y + 0.1 + progress * (surfaceY - diffuser.y - 0.14),
         diffuser.z + bubble.z * spread,
       )
+
+      if (ripple) {
+        const age = progress / bubble.speed
+        const strength = Math.max(0, 1 - age / RIPPLE_LIFETIME)
+        ripple.position.set(object.position.x, surfaceY + 0.01, object.position.z)
+        ripple.scale.setScalar(strength > 0 ? 0.05 + age * 0.18 : 0)
+        ;(ripple as Object3D & { material?: { opacity: number } }).material!.opacity =
+          strength * 0.5
+      }
     })
   })
 
   return (
     <group userData={{ aquariumBubbles: true }}>
       {BUBBLES.map((bubble, index) => (
-        <mesh
-          key={index}
-          position={[
-            diffuser.x + bubble.x * (0.08 + bubble.phase * 0.18) + Math.sin(index) * 0.025,
-            diffuser.y + 0.1 + bubble.phase * (surfaceY - diffuser.y - 0.18),
-            diffuser.z + bubble.z * (0.08 + bubble.phase * 0.18),
-          ]}
-          ref={(object) => {
-            refs.current[index] = object
-          }}
-          scale={bubble.radius}
-          userData={{ aquariumBubble: true }}
-        >
-          <sphereGeometry args={[1, 10, 8]} />
-          <meshPhysicalMaterial
-            color={PALETTE.PANE}
-            depthWrite={false}
-            opacity={0.58}
-            roughness={0}
-            transparent
-            transmission={0.4}
-          />
-        </mesh>
+        <group key={index}>
+          <mesh
+            position={[
+              diffuser.x + bubble.x * (0.08 + bubble.phase * 0.18) + Math.sin(index) * 0.025,
+              diffuser.y + 0.1 + bubble.phase * (surfaceY - diffuser.y - 0.14),
+              diffuser.z + bubble.z * (0.08 + bubble.phase * 0.18),
+            ]}
+            ref={(object) => {
+              refs.current[index] = object
+            }}
+            scale={bubble.radius}
+            userData={{ aquariumBubble: true }}
+          >
+            <sphereGeometry args={[1, 10, 8]} />
+            <meshPhysicalMaterial
+              color={PALETTE.PANE}
+              depthWrite={false}
+              opacity={0.58}
+              roughness={0}
+              transparent
+              transmission={0.4}
+            />
+          </mesh>
+          <mesh
+            ref={(object) => {
+              rippleRefs.current[index] = object
+            }}
+            rotation={[-Math.PI / 2, 0, 0]}
+            userData={{ aquariumRipple: true }}
+          >
+            <ringGeometry args={[0.6, 1, 24]} />
+            <meshBasicMaterial
+              color={PALETTE.WATERLINE}
+              depthWrite={false}
+              opacity={0}
+              transparent
+            />
+          </mesh>
+        </group>
       ))}
     </group>
   )
