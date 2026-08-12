@@ -36,6 +36,7 @@ describe('鱼缸设备', () => {
     // 圆形气盘贴着缸底，冒出的气泡留在水里并横向散开。
     expect(before.stone.y).toBeLessThan(-tank.height / 2 + 0.5)
     expect(before.bubbles).toHaveLength(18)
+    expect(before.ripples).toHaveLength(18)
     before.bubbles.forEach(({ y }) => {
       expect(y).toBeGreaterThan(before.stone.y)
       expect(y).toBeLessThan(surface)
@@ -47,8 +48,14 @@ describe('鱼缸设备', () => {
 
     aquarium.letTimePass(1)
     const after = aquarium.airPump()
-    const risen = after.bubbles.filter(({ y }, index) => y > before.bubbles[index]!.y)
-    /** 实测 13/18 继续上升，其余已经到水面并从气盘重新冒出；至少一半上升才算气流成立。 */
+    const deltas = after.bubbles.map(({ y }, index) => y - before.bubbles[index]!.y)
+    const risen = deltas.filter((delta) => delta > 0)
+    /** 速度加快后多数气泡仍在上升；少数到水面后会重新从气盘冒出。 */
     expect(risen.length).toBeGreaterThan(before.bubbles.length / 2)
+    /** 实测最快气泡一秒上升约 1.4 世界单位；0.8 足以防止退回原来的慢速。 */
+    expect(Math.max(...risen)).toBeGreaterThan(0.8)
+    const activeRipples = after.ripples.filter(({ radius }) => radius > 0)
+    expect(activeRipples.length).toBeGreaterThan(0)
+    activeRipples.forEach(({ position }) => expect(position.y).toBeGreaterThan(surface))
   })
 })
