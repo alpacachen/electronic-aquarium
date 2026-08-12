@@ -63,6 +63,10 @@ const MIN_WALL_TURN_RATE = 0.35
 const MAX_WALL_TURN_RATE = 2.8
 const MAX_WALL_TURN_PER_STEP = 0.12
 
+/** Short, individualised steering bursts make a fish turn like a fish, not a clock hand. */
+const SHARP_TURN_PERIOD_DIVISOR = 5
+const SHARP_TURN_RATE_MULTIPLIER = 4
+
 /**
  * A fish's nose tilts up when it climbs, and the tilt tracks the slope it is
  * actually travelling on: pitch is atan2(climb, forward speed). The cap keeps a
@@ -155,6 +159,15 @@ export function surgeSpeed(fish: FishState, elapsed: number) {
   return fish.speed * (1 + Math.sin(angle) * fish.cruise.surge)
 }
 
+function cruiseTurnRate(fish: FishState, elapsed: number) {
+  const period = fish.cruise.surgePeriod / SHARP_TURN_PERIOD_DIVISOR
+  const pulse = Math.sin(fish.cruise.phase + (TWO_PI * elapsed) / period)
+  return (
+    fish.turnRate +
+    pulse * Math.abs(pulse) * fish.cruise.surge * SHARP_TURN_RATE_MULTIPLIER
+  )
+}
+
 /**
  * Advances one fish without mutating the input state.
  * The bounds are half-extents around the center of the water volume.
@@ -166,7 +179,8 @@ export function stepFish(
 ): FishState {
   const step = Math.max(0, deltaTime)
   const elapsed = fish.elapsed + step
-  let heading = fish.heading + fish.turnRate * step
+  const turnRate = cruiseTurnRate(fish, fish.elapsed + step / 2)
+  let heading = fish.heading + turnRate * step
   heading = avoidWall(fish, heading, step, bounds)
 
   /**
