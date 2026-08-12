@@ -13,8 +13,8 @@ import { defineConfig } from 'vitest/config'
  */
 const PAGES_BASE = '/electronic-aquarium/'
 
-export default defineConfig(({ command, isPreview }) => ({
-  base: command === 'build' || isPreview ? PAGES_BASE : '/',
+export default defineConfig(({ command, isPreview, mode }) => ({
+  base: mode === 'netlify' ? '/' : command === 'build' || isPreview ? PAGES_BASE : '/',
   plugins: [react(), tailwindcss()],
   /**
    * `@/` points at src/, which is the alias shadcn's components import through.
