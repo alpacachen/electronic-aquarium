@@ -191,6 +191,7 @@ describe('观赏鱼缸', () => {
      * 位移的模长就是速度乘步长，和朝向无关，所以不必知道鱼往哪游也能看出它的快慢。
      */
     const travelled = new Map<number, number[]>()
+    let sharpestTurn = 0
     let previous = aquarium.fish().map(({ headingY, pitch, position }) => ({
       headingY,
       pitch,
@@ -205,6 +206,7 @@ describe('观赏鱼缸', () => {
         const turned = Math.abs(
           Math.atan2(Math.sin(headingY - was.headingY), Math.cos(headingY - was.headingY)),
         )
+        sharpestTurn = Math.max(sharpestTurn, turned)
         /**
          * 贴着玻璃转身是这里最急的一下，实测约 0.13 弧度——那是模拟里 per-frame
          * 的转向限幅在起作用。阈值留到 0.2：够松，不会因为正常转身而误报；也够紧，
@@ -233,6 +235,8 @@ describe('观赏鱼缸', () => {
     // 而且至少有一条鱼明显地时快时慢，且没有鱼倒着游
     const spans = [...travelled.values()].map((steps) => Math.max(...steps) / Math.min(...steps))
     expect(Math.max(...spans)).toBeGreaterThan(1.3)
+    /** 实测急转帧约 0.08 弧度；阈值留到 0.03，足以抓住脉冲又不挑正常帧率。 */
+    expect(sharpestTurn).toBeGreaterThan(0.03)
     ;[...travelled.values()].forEach((steps) => {
       expect(Math.min(...steps)).toBeGreaterThan(0)
     })
