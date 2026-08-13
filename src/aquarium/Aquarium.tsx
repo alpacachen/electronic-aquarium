@@ -95,6 +95,98 @@ function Water({ geometry }: { geometry: TankSceneGeometry }) {
   )
 }
 
+const PLANTS = [
+  { height: 2.2, x: -0.36, z: -0.32 },
+  { height: 1.75, x: -0.12, z: -0.37 },
+  { height: 2.45, x: 0.14, z: -0.34 },
+] as const
+
+const PLANT_BLADES = [
+  { height: 1, lean: -0.12, x: 0, z: 0 },
+  { height: 0.72, lean: 0.18, x: -0.13, z: 0.04 },
+  { height: 0.84, lean: -0.2, x: 0.13, z: -0.03 },
+] as const
+
+/** Low, back-weighted scenery leaves the fish and the controls in front easy to see. */
+function Aquascape({ geometry }: { geometry: TankSceneGeometry }) {
+  const scale = geometry.fishScale
+  const substrateTop = geometry.substrate.y + geometry.substrate.height / 2
+
+  return (
+    <group userData={{ aquariumScenery: true }}>
+      {PLANTS.map((plant, plantIndex) => (
+        <group
+          key={plantIndex}
+          position={[
+            geometry.water.length * plant.x,
+            substrateTop,
+            geometry.water.depth * plant.z,
+          ]}
+          userData={{ aquariumPlant: true }}
+        >
+          {PLANT_BLADES.map((blade, bladeIndex) => {
+            const height = plant.height * blade.height * scale
+            return (
+              <mesh
+                castShadow
+                key={bladeIndex}
+                position={[blade.x * scale, height / 2, blade.z * scale]}
+                rotation={[0, bladeIndex * 1.7, blade.lean]}
+              >
+                <coneGeometry args={[0.1 * scale, height, 7]} />
+                <meshStandardMaterial color={PALETTE.PLANT} flatShading roughness={0.75} />
+              </mesh>
+            )
+          })}
+        </group>
+      ))}
+
+      <group
+        position={[
+          geometry.water.length * -0.23,
+          substrateTop,
+          geometry.water.depth * -0.08,
+        ]}
+        rotation={[0, 0.22, 0]}
+        userData={{ aquariumRockery: true }}
+      >
+        <mesh
+          castShadow
+          position={[-0.52 * scale, 0.42 * scale, 0]}
+          receiveShadow
+          scale={[1.1, 0.76, 0.82]}
+          userData={{ aquariumRock: true }}
+        >
+          <dodecahedronGeometry args={[0.55 * scale]} />
+          <meshStandardMaterial color={PALETTE.CABINET} flatShading roughness={0.95} />
+        </mesh>
+        <mesh
+          castShadow
+          position={[0.34 * scale, 0.34 * scale, -0.08 * scale]}
+          receiveShadow
+          rotation={[0.1, 0.45, -0.08]}
+          scale={[0.9, 0.7, 1]}
+          userData={{ aquariumRock: true }}
+        >
+          <dodecahedronGeometry args={[0.48 * scale]} />
+          <meshStandardMaterial color={PALETTE.SUBSTRATE} flatShading roughness={0.95} />
+        </mesh>
+        <mesh
+          castShadow
+          position={[0.88 * scale, 0.27 * scale, 0.16 * scale]}
+          receiveShadow
+          rotation={[-0.12, -0.2, 0.16]}
+          scale={[1, 0.72, 0.86]}
+          userData={{ aquariumRock: true }}
+        >
+          <dodecahedronGeometry args={[0.38 * scale]} />
+          <meshStandardMaterial color={PALETTE.CABINET} flatShading roughness={0.95} />
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
 /** The lamp doesn't take viewer input, so its color and output are fixed. */
 const LAMP_COLOR = PALETTE.LAMP
 const LAMP_STRENGTH = 0.7
@@ -478,6 +570,7 @@ export function Aquarium({
 
       <Tank geometry={geometry} />
       <Water geometry={geometry} />
+      <Aquascape geometry={geometry} />
 
       <group position={[0, geometry.fishCenterY, 0]}>
         {fish.map(({ id, species, ...seed }) => (
