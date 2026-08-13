@@ -35,6 +35,45 @@ describe('观赏鱼缸', () => {
     expect(Math.max(...lengths)).toBeLessThan(Math.min(...lengths) * 2)
   })
 
+  it('在每种尺寸的缸底都摆着成片水草和一组假山', async () => {
+    // Given 观众依次看过所有鱼缸尺寸
+    const tanks = ['标准缸', '迷你缸', '小型缸', '大型缸', '加大型']
+
+    for (const [index, name] of tanks.entries()) {
+      if (index > 0) await aquarium.chooseTankSize(name)
+
+      // When 观众查看真正渲染进 Three 场景的造景
+      const tank = aquarium.tank()
+      const waterSurface = aquarium.waterSurface()
+      const scenery = aquarium.scenery()
+
+      // Then 每只缸里都有三丛水草和三块组成假山的石头
+      expect(scenery.plants, name).toHaveLength(3)
+      expect(scenery.rocks, name).toHaveLength(3)
+
+      // 而且造景随缸缩放、贴着后侧缸底，完整留在玻璃和水面以内
+      ;[...scenery.plants, scenery.rockery].forEach((bounds) => {
+        expect(bounds.min.x, name).toBeGreaterThan(-tank.length / 2)
+        expect(bounds.max.x, name).toBeLessThan(tank.length / 2)
+        expect(bounds.min.y, name).toBeGreaterThan(-tank.height / 2)
+        expect(bounds.max.y, name).toBeLessThan(waterSurface)
+        expect(bounds.min.z, name).toBeGreaterThan(-tank.depth / 2)
+        expect(bounds.max.z, name).toBeLessThan(tank.depth / 2)
+      })
+
+      /**
+       * 实测水草约占缸高 28%–40%，假山约占缸长 15%–24%。阈值只留正常的预设
+       * 比例差异，能抓住忘记跟随 TankSceneGeometry 缩放后在大缸里缩成摆件的回归。
+       */
+      const tallestPlant = Math.max(
+        ...scenery.plants.map(({ max, min }) => max.y - min.y),
+      )
+      const rockeryWidth = scenery.rockery.max.x - scenery.rockery.min.x
+      expect(tallestPlant / tank.height, name).toBeGreaterThan(0.25)
+      expect(rockeryWidth / tank.length, name).toBeGreaterThan(0.12)
+    }
+  })
+
   it('让每个鱼种都真的动起来，包括靠程序化摆尾的那种', () => {
     // Given 入场过渡结束后，记下每个鱼种的姿态
     aquarium.letTimePass(1)

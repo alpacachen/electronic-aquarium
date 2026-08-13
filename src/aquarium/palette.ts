@@ -20,6 +20,8 @@ export const PALETTE = {
   PANE_EDGE: '#7bc5da',
   /** 缸底的沙 */
   SUBSTRATE: '#bfa67b',
+  /** 水草 */
+  PLANT: '#2f8f6b',
   /** 水体 */
   WATER: '#087f9e',
   /** 水面 */
