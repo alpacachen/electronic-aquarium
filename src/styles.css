@@ -72,7 +72,13 @@
   --color-pane: #bceeff;
   --color-pane-edge: #7bc5da;
   --color-substrate: #bfa67b;
+  --color-sand-light: #d7bd8a;
+  --color-sand-dark: #8d7658;
+  --color-rock: #5f625d;
+  --color-rock-light: #81847b;
   --color-plant: #2f8f6b;
+  --color-plant-dark: #1f6f51;
+  --color-plant-light: #58a879;
   --color-water: #087f9e;
   --color-waterline: #57d4e8;
   --color-sunlight: #d8f7ff;

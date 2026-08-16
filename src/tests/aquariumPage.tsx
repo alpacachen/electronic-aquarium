@@ -593,17 +593,23 @@ export async function openAquarium({
     scenery: () => {
       let rockery: Object3D | undefined
       const plants: Object3D[] = []
+      const carpetPlants: Object3D[] = []
       const rocks: Object3D[] = []
+      const sandGrains: Object3D[] = []
       live().scene.traverse((object) => {
         if (object.userData.aquariumPlant === true) plants.push(object)
+        if (object.userData.aquariumCarpetPlant === true) carpetPlants.push(object)
         if (object.userData.aquariumRock === true) rocks.push(object)
         if (object.userData.aquariumRockery === true) rockery = object
+        if (object.userData.aquariumSandGrain === true) sandGrains.push(object)
       })
       if (!rockery) throw new Error('The aquarium has no rockery.')
       return {
         plants: plants.map((plant) => new Box3().setFromObject(plant)),
+        carpetPlants: carpetPlants.map((plant) => new Box3().setFromObject(plant)),
         rocks: rocks.map((rock) => new Box3().setFromObject(rock)),
         rockery: new Box3().setFromObject(rockery),
+        sandGrains: sandGrains.map((grain) => new Box3().setFromObject(grain)),
       }
     },
 
