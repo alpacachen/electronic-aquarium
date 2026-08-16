@@ -47,9 +47,11 @@ describe('观赏鱼缸', () => {
       const waterSurface = aquarium.waterSurface()
       const scenery = aquarium.scenery()
 
-      // Then 每只缸里都有三丛水草和三块组成假山的石头
+      // Then 每只缸里都有三丛主水草、遍布底砂的矮草和三块组成假山的主石
       expect(scenery.plants, name).toHaveLength(3)
+      expect(scenery.carpetPlants.length, name).toBeGreaterThanOrEqual(60)
       expect(scenery.rocks, name).toHaveLength(3)
+      expect(scenery.sandGrains.length, name).toBeGreaterThanOrEqual(160)
 
       // 而且造景随缸缩放、贴着后侧缸底，完整留在玻璃和水面以内
       ;[...scenery.plants, scenery.rockery].forEach((bounds) => {
@@ -62,14 +64,18 @@ describe('观赏鱼缸', () => {
       })
 
       /**
-       * 实测水草约占缸高 28%–40%，假山约占缸长 15%–24%。阈值只留正常的预设
-       * 比例差异，能抓住忘记跟随 TankSceneGeometry 缩放后在大缸里缩成摆件的回归。
+       * 主草现在约占缸高 12%–18%，矮草低于 10%；阈值抓住草坪重新长成高草的回归。
        */
       const tallestPlant = Math.max(
         ...scenery.plants.map(({ max, min }) => max.y - min.y),
       )
       const rockeryWidth = scenery.rockery.max.x - scenery.rockery.min.x
-      expect(tallestPlant / tank.height, name).toBeGreaterThan(0.25)
+      expect(tallestPlant / tank.height, name).toBeGreaterThan(0.1)
+      expect(tallestPlant / tank.height, name).toBeLessThan(0.22)
+      expect(
+        Math.max(...scenery.carpetPlants.map(({ max, min }) => max.y - min.y)) / tank.height,
+        name,
+      ).toBeLessThan(0.1)
       expect(rockeryWidth / tank.length, name).toBeGreaterThan(0.12)
     }
   })

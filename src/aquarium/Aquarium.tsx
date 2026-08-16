@@ -30,6 +30,8 @@ function scaleFishSeed(seed: FishSeed, geometry: TankSceneGeometry): FishSeed {
 }
 
 function Tank({ geometry }: { geometry: TankSceneGeometry }) {
+  const substrateTop = geometry.substrate.y + geometry.substrate.height / 2
+
   return (
     <group>
       <mesh castShadow receiveShadow position={[0, geometry.base.y, 0]}>
@@ -54,8 +56,31 @@ function Tank({ geometry }: { geometry: TankSceneGeometry }) {
         <boxGeometry
           args={[geometry.substrate.length, geometry.substrate.height, geometry.substrate.depth]}
         />
-        <meshStandardMaterial color={PALETTE.SUBSTRATE} roughness={0.95} />
+        <meshStandardMaterial color={PALETTE.SAND_LIGHT} roughness={1} />
       </mesh>
+
+      {SAND_GRAINS.map((grain, index) => {
+        const radius = grain.radius * geometry.fishScale
+        return (
+          <mesh
+            key={index}
+            position={[
+              geometry.water.length * grain.x,
+              substrateTop + radius * 0.3,
+              geometry.water.depth * grain.z,
+            ]}
+            rotation={[grain.tilt, grain.rotation, grain.tilt * 0.7]}
+            scale={[1.3, 0.62, 0.95]}
+            userData={{ aquariumSandGrain: true }}
+          >
+            <icosahedronGeometry args={[radius, 0]} />
+            <meshStandardMaterial
+              color={index % 4 === 0 ? PALETTE.SAND_DARK : PALETTE.SAND_LIGHT}
+              roughness={1}
+            />
+          </mesh>
+        )
+      })}
     </group>
   )
 }
@@ -96,16 +121,45 @@ function Water({ geometry }: { geometry: TankSceneGeometry }) {
 }
 
 const PLANTS = [
-  { height: 2.2, x: -0.36, z: -0.32 },
-  { height: 1.75, x: -0.12, z: -0.37 },
-  { height: 2.45, x: 0.14, z: -0.34 },
+  { height: 0.9, x: -0.36, z: -0.32 },
+  { height: 0.75, x: -0.12, z: -0.37 },
+  { height: 1.05, x: 0.14, z: -0.34 },
 ] as const
 
 const PLANT_BLADES = [
-  { height: 1, lean: -0.12, x: 0, z: 0 },
-  { height: 0.72, lean: 0.18, x: -0.13, z: 0.04 },
-  { height: 0.84, lean: -0.2, x: 0.13, z: -0.03 },
+  { height: 1, lean: -0.12, x: 0, z: 0, turn: 0 },
+  { height: 0.72, lean: 0.18, x: -0.13, z: 0.04, turn: 1.7 },
+  { height: 0.84, lean: -0.2, x: 0.13, z: -0.03, turn: 3.2 },
+  { height: 0.66, lean: 0.28, x: 0.05, z: 0.13, turn: 4.2 },
+  { height: 0.78, lean: -0.24, x: -0.08, z: -0.12, turn: 5.1 },
 ] as const
+
+const CARPET_PLANTS = Array.from({ length: 64 }, (_, index) => {
+  const noise = (salt: number) => {
+    const mixed = Math.sin((index + 1) * 19.17 + salt * 47.31) * 43758.5453
+    return mixed - Math.floor(mixed)
+  }
+  return {
+    height: 0.22 + noise(1) * 0.2,
+    x: -0.47 + noise(2) * 0.94,
+    z: -0.47 + noise(3) * 0.94,
+    turn: noise(4) * Math.PI * 2,
+  }
+})
+
+const SAND_GRAINS = Array.from({ length: 180 }, (_, index) => {
+  const noise = (salt: number) => {
+    const mixed = Math.sin((index + 1) * 73.19 + salt * 29.41) * 43758.5453
+    return mixed - Math.floor(mixed)
+  }
+  return {
+    radius: 0.015 + noise(1) * 0.028,
+    rotation: noise(2) * Math.PI,
+    tilt: (noise(3) - 0.5) * 0.6,
+    x: -0.46 + noise(4) * 0.92,
+    z: -0.46 + noise(5) * 0.92,
+  }
+})
 
 /** Low, back-weighted scenery leaves the fish and the controls in front easy to see. */
 function Aquascape({ geometry }: { geometry: TankSceneGeometry }) {
@@ -126,15 +180,48 @@ function Aquascape({ geometry }: { geometry: TankSceneGeometry }) {
         >
           {PLANT_BLADES.map((blade, bladeIndex) => {
             const height = plant.height * blade.height * scale
+            const curve = new CatmullRomCurve3([
+              new Vector3(blade.x * scale, 0, blade.z * scale),
+              new Vector3((blade.x + blade.lean * 0.45) * scale, height * 0.3, blade.z * scale),
+              new Vector3((blade.x + blade.lean * 0.8) * scale, height * 0.68, blade.z * scale),
+              new Vector3((blade.x + blade.lean) * scale, height, blade.z * scale),
+            ])
             return (
               <mesh
                 castShadow
                 key={bladeIndex}
-                position={[blade.x * scale, height / 2, blade.z * scale]}
-                rotation={[0, bladeIndex * 1.7, blade.lean]}
+                rotation={[0, blade.turn, 0]}
               >
-                <coneGeometry args={[0.1 * scale, height, 7]} />
-                <meshStandardMaterial color={PALETTE.PLANT} flatShading roughness={0.75} />
+                <tubeGeometry args={[curve, 8, 0.035 * scale, 5, false]} />
+                <meshStandardMaterial color={PALETTE.PLANT} roughness={0.82} />
+              </mesh>
+            )
+          })}
+        </group>
+      ))}
+
+      {CARPET_PLANTS.map((plant, plantIndex) => (
+        <group
+          key={plantIndex}
+          position={[geometry.water.length * plant.x, substrateTop, geometry.water.depth * plant.z]}
+          rotation={[0, plant.turn, 0]}
+          userData={{ aquariumCarpetPlant: true }}
+        >
+          {[0, 1, 2].map((bladeIndex) => {
+            const height = plant.height * (0.78 + bladeIndex * 0.11) * scale
+            const lean = (bladeIndex - 1) * 0.16
+            const curve = new CatmullRomCurve3([
+              new Vector3((bladeIndex - 1) * 0.04 * scale, 0, 0),
+              new Vector3((bladeIndex - 1) * 0.05 * scale + lean * scale, height * 0.45, 0),
+              new Vector3((bladeIndex - 1) * 0.07 * scale + lean * scale, height, 0),
+            ])
+            return (
+              <mesh castShadow key={bladeIndex}>
+                <tubeGeometry args={[curve, 6, 0.018 * scale, 4, false]} />
+                <meshStandardMaterial
+                  color={bladeIndex === 1 ? PALETTE.PLANT_LIGHT : PALETTE.PLANT_DARK}
+                  roughness={0.86}
+                />
               </mesh>
             )
           })}
@@ -157,8 +244,8 @@ function Aquascape({ geometry }: { geometry: TankSceneGeometry }) {
           scale={[1.1, 0.76, 0.82]}
           userData={{ aquariumRock: true }}
         >
-          <dodecahedronGeometry args={[0.55 * scale]} />
-          <meshStandardMaterial color={PALETTE.CABINET} flatShading roughness={0.95} />
+          <icosahedronGeometry args={[0.55 * scale, 1]} />
+          <meshStandardMaterial color={PALETTE.ROCK} roughness={0.92} />
         </mesh>
         <mesh
           castShadow
@@ -168,8 +255,8 @@ function Aquascape({ geometry }: { geometry: TankSceneGeometry }) {
           scale={[0.9, 0.7, 1]}
           userData={{ aquariumRock: true }}
         >
-          <dodecahedronGeometry args={[0.48 * scale]} />
-          <meshStandardMaterial color={PALETTE.SUBSTRATE} flatShading roughness={0.95} />
+          <icosahedronGeometry args={[0.48 * scale, 1]} />
+          <meshStandardMaterial color={PALETTE.ROCK_LIGHT} roughness={0.94} />
         </mesh>
         <mesh
           castShadow
@@ -179,8 +266,21 @@ function Aquascape({ geometry }: { geometry: TankSceneGeometry }) {
           scale={[1, 0.72, 0.86]}
           userData={{ aquariumRock: true }}
         >
-          <dodecahedronGeometry args={[0.38 * scale]} />
-          <meshStandardMaterial color={PALETTE.CABINET} flatShading roughness={0.95} />
+          <icosahedronGeometry args={[0.38 * scale, 1]} />
+          <meshStandardMaterial color={PALETTE.ROCK} roughness={0.92} />
+        </mesh>
+
+        <mesh position={[-0.22 * scale, 0.18 * scale, 0.35 * scale]} rotation={[0.3, 0.8, -0.2]} scale={[1.4, 0.38, 0.8]}>
+          <icosahedronGeometry args={[0.24 * scale, 1]} />
+          <meshStandardMaterial color={PALETTE.ROCK_LIGHT} roughness={0.95} />
+        </mesh>
+        <mesh position={[0.52 * scale, 0.14 * scale, 0.28 * scale]} rotation={[-0.2, 0.2, 0.3]} scale={[1.1, 0.35, 0.75]}>
+          <icosahedronGeometry args={[0.2 * scale, 1]} />
+          <meshStandardMaterial color={PALETTE.SAND_DARK} roughness={1} />
+        </mesh>
+        <mesh position={[-0.5 * scale, 0.62 * scale, 0.08 * scale]} scale={[0.65, 0.16, 0.5]}>
+          <sphereGeometry args={[0.2 * scale, 12, 8]} />
+          <meshStandardMaterial color={PALETTE.PLANT_DARK} roughness={0.9} />
         </mesh>
       </group>
     </group>

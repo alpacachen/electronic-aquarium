@@ -56,7 +56,7 @@ const DEFAULT_TANK = findDefaultTank()
 
 const WORLD_UNITS_PER_CM = 1 / 6
 const BASE_HEIGHT = 0.35
-const SUBSTRATE_HEIGHT = 0.25
+const SUBSTRATE_HEIGHT = 0.32
 const WATER_HEADROOM = 0.45
 const WATER_INSET = 0.28
 

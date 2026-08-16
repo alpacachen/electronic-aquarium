@@ -20,8 +20,16 @@ export const PALETTE = {
   PANE_EDGE: '#7bc5da',
   /** 缸底的沙 */
   SUBSTRATE: '#bfa67b',
+  /** 底砂颗粒的亮色与阴影色 */
+  SAND_LIGHT: '#d7bd8a',
+  SAND_DARK: '#8d7658',
+  /** 假山的主色与受光面 */
+  ROCK: '#5f625d',
+  ROCK_LIGHT: '#81847b',
   /** 水草 */
   PLANT: '#2f8f6b',
+  PLANT_DARK: '#1f6f51',
+  PLANT_LIGHT: '#58a879',
   /** 水体 */
   WATER: '#087f9e',
   /** 水面 */
